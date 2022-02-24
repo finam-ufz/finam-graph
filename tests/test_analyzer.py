@@ -10,6 +10,7 @@ from finam.data.grid import Grid, GridSpec
 from finam.modules.generators import CallbackGenerator
 
 from finam_graph.comp_analyzer import CompAnalyzer
+from finam_graph.diagram import CompDiagram
 
 
 class MockupComponent(ATimeComponent):
@@ -53,17 +54,19 @@ class TestCompAnalyzer(unittest.TestCase):
             start=datetime(2000, 1, 1),
             step=timedelta(days=7),
         )
+        consumer = MockupComponent(start=datetime(2000, 1, 1), step=timedelta(days=1))
 
-        cons = MockupComponent(start=datetime(2000, 1, 1), step=timedelta(days=1))
+        grid_to_val = base.GridToValue(np.mean)
+        lin_interp = time.LinearInterpolation()
 
-        composition = Composition([source, cons])
+        composition = Composition([source, consumer])
         composition.initialize()
 
         _ = (
             source.outputs["Grid"]
-            >> base.GridToValue(np.mean)
-            >> time.LinearInterpolation()
-            >> cons.inputs["Input"]
+            >> grid_to_val
+            >> lin_interp
+            >> consumer.inputs["Input"]
         )
 
         composition.run(datetime(2000, 7, 1))
@@ -75,3 +78,14 @@ class TestCompAnalyzer(unittest.TestCase):
         self.assertEqual(len(comps), 2)
         self.assertEqual(len(adapters), 2)
         self.assertEqual(len(edges), 3)
+
+        pos = {
+            source: (0, 0),
+            grid_to_val: (1, 1),
+            lin_interp: (2, 2),
+            consumer: (3, 3),
+        }
+
+        diagram = CompDiagram()
+
+        diagram.draw(comps, adapters, edges, pos)
