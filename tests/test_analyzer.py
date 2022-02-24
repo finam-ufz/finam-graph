@@ -60,17 +60,18 @@ class TestCompAnalyzer(unittest.TestCase):
         composition.initialize()
 
         _ = (
-                source.outputs["Grid"]
-                >> base.GridToValue(np.mean)
-                >> time.LinearInterpolation()
-                >> cons.inputs["Input"]
+            source.outputs["Grid"]
+            >> base.GridToValue(np.mean)
+            >> time.LinearInterpolation()
+            >> cons.inputs["Input"]
         )
 
         composition.run(datetime(2000, 7, 1))
 
         analyzer = CompAnalyzer(composition)
 
-        comps, adapters = analyzer.get_graph_nodes()
+        comps, adapters, edges = analyzer.get_graph()
 
         self.assertEqual(len(comps), 2)
         self.assertEqual(len(adapters), 2)
+        self.assertEqual(len(edges), 3)
