@@ -55,11 +55,13 @@ class TestCompAnalyzer(unittest.TestCase):
             step=timedelta(days=7),
         )
         consumer = MockupComponent(start=datetime(2000, 1, 1), step=timedelta(days=1))
+        consumer2 = MockupComponent(start=datetime(2000, 1, 1), step=timedelta(days=1))
 
         grid_to_val = base.GridToValue(np.mean)
+        grid_to_val2 = base.GridToValue(np.mean)
         lin_interp = time.LinearInterpolation()
 
-        composition = Composition([source, consumer])
+        composition = Composition([source, consumer, consumer2])
         composition.initialize()
 
         _ = (
@@ -69,23 +71,14 @@ class TestCompAnalyzer(unittest.TestCase):
             >> consumer.inputs["Input"]
         )
 
+        _ = source.outputs["Grid"] >> grid_to_val2 >> consumer2.inputs["Input"]
+
         composition.run(datetime(2000, 7, 1))
 
         analyzer = CompAnalyzer(composition)
 
         comps, adapters, edges = analyzer.get_graph()
 
-        self.assertEqual(len(comps), 2)
-        self.assertEqual(len(adapters), 2)
-        self.assertEqual(len(edges), 3)
-
-        pos = {
-            source: (0, 0),
-            grid_to_val: (1, 1),
-            lin_interp: (2, 2),
-            consumer: (3, 3),
-        }
-
-        diagram = CompDiagram()
-
-        diagram.draw(comps, adapters, edges, pos)
+        self.assertEqual(len(comps), 3)
+        self.assertEqual(len(adapters), 3)
+        self.assertEqual(len(edges), 5)
