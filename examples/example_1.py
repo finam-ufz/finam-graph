@@ -85,4 +85,4 @@ if __name__ == "__main__":
         consumer3: (2, 3),
     }
 
-    CompDiagram().draw(composition, pos)
+    CompDiagram().draw(composition, pos, save_path="examples/graph.svg")
