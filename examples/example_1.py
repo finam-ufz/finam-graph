@@ -72,8 +72,6 @@ if __name__ == "__main__":
 
     _ = source.outputs["Scalar"] >> lin_interp2 >> consumer3.inputs["Input"]
 
-    composition.run(datetime(2000, 7, 1))
-
     pos = {
         source: (0, 2),
         grid_to_val: (1, 2),

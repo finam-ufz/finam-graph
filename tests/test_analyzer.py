@@ -72,8 +72,6 @@ class TestCompAnalyzer(unittest.TestCase):
 
         _ = source.outputs["Grid"] >> grid_to_val2 >> consumer2.inputs["Input"]
 
-        composition.run(datetime(2000, 7, 1))
-
         analyzer = CompAnalyzer(composition)
 
         comps, adapters, edges = analyzer.get_graph()
