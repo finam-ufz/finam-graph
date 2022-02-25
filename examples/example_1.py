@@ -8,7 +8,6 @@ from finam.core.sdk import ATimeComponent, Input
 from finam.data.grid import Grid, GridSpec
 from finam.modules.generators import CallbackGenerator
 
-from finam_graph.comp_analyzer import CompAnalyzer
 from finam_graph.diagram import CompDiagram
 
 
@@ -75,10 +74,6 @@ if __name__ == "__main__":
 
     composition.run(datetime(2000, 7, 1))
 
-    analyzer = CompAnalyzer(composition)
-
-    comps, adapters, edges = analyzer.get_graph()
-
     pos = {
         source: (0, 2),
         grid_to_val: (1, 2),
@@ -90,6 +85,4 @@ if __name__ == "__main__":
         consumer3: (2, 3),
     }
 
-    diagram = CompDiagram()
-
-    diagram.draw(comps, adapters, edges, pos)
+    CompDiagram().draw(composition, pos)

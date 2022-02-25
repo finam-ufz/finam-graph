@@ -10,7 +10,6 @@ from finam.data.grid import Grid, GridSpec
 from finam.modules.generators import CallbackGenerator
 
 from finam_graph.comp_analyzer import CompAnalyzer
-from finam_graph.diagram import CompDiagram
 
 
 class MockupComponent(ATimeComponent):
