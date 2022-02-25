@@ -3,6 +3,8 @@ from finam.core.interfaces import IComponent
 from matplotlib import patches, text
 from matplotlib.path import Path
 
+from finam_graph.comp_analyzer import CompAnalyzer
+
 
 class CompDiagram:
     def __init__(
@@ -31,7 +33,10 @@ class CompDiagram:
             grid_size[1] - adapter_size[1]
         ) / 2
 
-    def draw(self, components, adapters, edges, positions):
+    def draw(self, composition, positions, show=True):
+        analyzer = CompAnalyzer(composition)
+        components, adapters, edges = analyzer.get_graph()
+
         plt.ion()
 
         figure, ax = plt.subplots(figsize=(12, 6))
@@ -55,7 +60,8 @@ class CompDiagram:
         for edge in edges:
             self.draw_edge(edge, positions, ax)
 
-        plt.show(block=True)
+        if show:
+            plt.show(block=True)
 
     def draw_edge(self, edge, positions, axes):
         src_pos = self.comp_pos(edge.source, positions[edge.source])
