@@ -8,14 +8,14 @@ from finam_graph.comp_analyzer import CompAnalyzer
 
 class CompDiagram:
     def __init__(
-        self,
-        grid_size=(200, 100),
-        component_size=(140, 80),
-        adapter_size=(120, 40),
-        margin=20,
-        comp_slot_size=(30, 14),
-        adap_slot_size=(10, 10),
-        curve_size=30,
+            self,
+            grid_size=(200, 100),
+            component_size=(140, 80),
+            adapter_size=(120, 40),
+            margin=20,
+            comp_slot_size=(30, 14),
+            adap_slot_size=(10, 10),
+            curve_size=30,
     ):
         self.grid_size = grid_size
         self.component_size = component_size
@@ -27,10 +27,10 @@ class CompDiagram:
         self.curve_size = curve_size
 
         self.component_offset = (grid_size[0] - component_size[0]) / 2, (
-            grid_size[1] - component_size[1]
+                grid_size[1] - component_size[1]
         ) / 2
         self.adapter_offset = (grid_size[0] - adapter_size[0]) / 2, (
-            grid_size[1] - adapter_size[1]
+                grid_size[1] - adapter_size[1]
         ) / 2
 
     def draw(self, composition, positions, show=True):
@@ -43,13 +43,28 @@ class CompDiagram:
         ax.axis("off")
         ax.set_aspect("equal")
 
-        figure.subplots_adjust(left=0.02, right=0.98, top=0.98, bottom=0.06)
+        figure.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
         bbox = ax.get_window_extent().transformed(figure.dpi_scale_trans.inverted())
         width, height = bbox.width * figure.dpi, bbox.height * figure.dpi
 
-        ax.set_xlim(0, width)
-        ax.set_ylim(0, height)
+        x_min, y_min = 99999, 99999
+        x_max, y_max = -99999, -99999
+        for _c, pos in positions.items():
+            if pos[0] < x_min:
+                x_min = pos[0]
+            if pos[1] < y_min:
+                y_min = pos[1]
+            if pos[0] > x_max:
+                x_max = pos[0]
+            if pos[1] > y_max:
+                y_max = pos[1]
+
+        x_lim = x_min * self.grid_size[0] - self.margin, (x_max + 1) * self.grid_size[0] + self.margin
+        y_lim = y_min * self.grid_size[1] - self.margin, (y_max + 1) * self.grid_size[1] + self.margin
+
+        ax.set_xlim(*x_lim)
+        ax.set_ylim(*y_lim)
 
         for comp in components:
             self.draw_component(comp, positions[comp], ax)
@@ -215,13 +230,13 @@ class CompDiagram:
     def comp_pos(self, comp_or_ada, pos):
         if isinstance(comp_or_ada, IComponent):
             return (
-                pos[0] * self.grid_size[0] + self.component_offset[0] + self.margin,
-                pos[1] * self.grid_size[1] + self.component_offset[1] + self.margin,
+                pos[0] * self.grid_size[0] + self.component_offset[0],
+                pos[1] * self.grid_size[1] + self.component_offset[1],
             )
         else:
             return (
-                pos[0] * self.grid_size[0] + self.adapter_offset[0] + self.margin,
-                pos[1] * self.grid_size[1] + self.adapter_offset[1] + self.margin,
+                pos[0] * self.grid_size[0] + self.adapter_offset[0],
+                pos[1] * self.grid_size[1] + self.adapter_offset[1],
             )
 
     def input_pos(self, comp_or_ada, idx):
