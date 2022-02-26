@@ -83,4 +83,4 @@ if __name__ == "__main__":
         consumer3: (2, 3),
     }
 
-    GraphDiagram().draw(composition, pos, save_path="examples/graph.svg")
+    GraphDiagram().draw(composition, save_path="examples/graph.svg")
