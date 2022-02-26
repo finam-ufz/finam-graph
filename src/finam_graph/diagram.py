@@ -15,15 +15,15 @@ from finam_graph.graph import Graph
 class GraphDiagram:
     def __init__(
         self,
-        grid_size=(200, 100),
-        component_size=(120, 80),
-        adapter_size=(120, 30),
+        grid_size=(160, 100),
+        component_size=(80, 60),
+        adapter_size=(80, 30),
         margin=50,
         comp_slot_size=(30, 14),
         adap_slot_size=(10, 10),
         curve_size=30,
-        max_label_length=25,
-        max_slot_label_length=10,
+        max_label_length=12,
+        max_slot_label_length=6,
     ):
         self.grid_size = grid_size
         self.component_size = component_size
