@@ -42,11 +42,11 @@ class GraphDiagram:
         self.selected_cell = None
         self.show_grid = False
 
-    def draw(self, composition, positions=None, show=True, block=True, save_path=None):
+    def draw(self, composition, positions=None, show=True, block=True, save_path=None, max_iterations=25000):
         graph = Graph(composition)
 
         if positions is None:
-            positions = optimize_positions(graph)
+            positions = optimize_positions(graph, max_iterations)
 
         figure, ax = plt.subplots(figsize=(12, 6))
         figure.canvas.set_window_title("Graph - SPACE for grid, click to re-arrange")
@@ -341,14 +341,14 @@ class GraphDiagram:
             )
 
 
-def optimize_positions(graph: Graph):
-    count = len(graph.components) + len(graph.adapters)
-    grid = np.ndarray((count, count), dtype=object)
+def optimize_positions(graph: Graph, max_iterations):
+    size = math.ceil(math.sqrt(len(graph.components) + len(graph.adapters))) * 2
+    grid = np.ndarray((size, size), dtype=object)
     pos = {}
 
     for c in set.union(graph.components, graph.adapters):
         while True:
-            x, y = np.random.randint(0, count, 2)
+            x, y = np.random.randint(0, size, 2)
             if grid[x, y] is None:
                 grid[x, y] = c
                 break
@@ -360,13 +360,15 @@ def optimize_positions(graph: Graph):
     last_improvement = 0
 
     print("Optimizing graph layout...")
-    for i in range(25000):
+
+    i = -1
+    for i in range(max_iterations):
         pos_new = dict(pos)
         grid_new = grid.copy()
 
         for j in range(random.randrange(1, 5)):
             node = np.random.choice(nodes)
-            x, y = np.random.randint(0, count, 2)
+            x, y = np.random.randint(0, size, 2)
 
             node_here = grid_new[x, y]
             if node_here == node:
