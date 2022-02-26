@@ -1,8 +1,10 @@
-from math import floor
+import math
+import random
+import numpy as np
 
 import matplotlib.pyplot as plt
 from finam.core.interfaces import IComponent
-from matplotlib import patches, text
+from matplotlib import patches
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import MouseButton
 from matplotlib.path import Path
@@ -14,7 +16,7 @@ class GraphDiagram:
     def __init__(
         self,
         grid_size=(200, 100),
-        component_size=(140, 80),
+        component_size=(120, 80),
         adapter_size=(120, 40),
         margin=30,
         comp_slot_size=(30, 14),
@@ -73,8 +75,8 @@ class GraphDiagram:
                     return
 
                 xdata, ydata = event.xdata, event.ydata
-                cell = int(floor(xdata / self.grid_size[0])), int(
-                    floor(ydata / self.grid_size[1])
+                cell = int(math.floor(xdata / self.grid_size[0])), int(
+                    math.floor(ydata / self.grid_size[1])
                 )
 
                 if self.selected_cell is None:
@@ -335,14 +337,72 @@ class GraphDiagram:
 
 
 def optimize_positions(graph: Graph):
+    count = len(graph.components) + len(graph.adapters)
+    grid = np.ndarray((count, count), dtype=object)
     pos = {}
 
-    cnt = 0
-    for c in graph.components:
-        pos[c] = (0, cnt)
-        cnt += 1
-    for a in graph.adapters:
-        pos[a] = (0, cnt)
-        cnt += 1
+    for c in set.union(graph.components, graph.adapters):
+        while True:
+            x, y = np.random.randint(0, count, 2)
+            if grid[x, y] is None:
+                grid[x, y] = c
+                break
+        pos[c] = x, y
+
+    score = rate_positions(pos, graph.edges)
+
+    nodes = list(pos.keys())
+    last_improvement = 0
+
+    print("Optimizing graph layout...")
+    for i in range(100000):
+        pos_new = dict(pos)
+        grid_new = grid.copy()
+
+        for j in range(random.randrange(1, 5)):
+            node = np.random.choice(nodes)
+            x, y = np.random.randint(0, count, 2)
+
+            node_here = grid_new[x, y]
+            if node_here == node:
+                continue
+
+            if node_here is None:
+                grid_new[pos_new[node]] = None
+                grid_new[x, y] = node
+                pos_new[node] = (x, y)
+            else:
+                grid_new[pos_new[node]] = node_here
+                grid_new[x, y] = node
+                pos_new[node_here] = pos_new[node]
+                pos_new[node] = (x, y)
+
+        score_new = rate_positions(pos_new, graph.edges)
+
+        if score_new < score:
+            pos = pos_new
+            grid = grid_new
+            score = score_new
+            last_improvement = i
+
+        if i > 2500 and i > 3 * last_improvement:
+            print("Done (%d iterations, score %s)" % (i, score))
+            break
 
     return pos
+
+
+def rate_positions(pos, edges):
+    score = 0.0
+    for e in edges:
+        p1 = pos[e.source]
+        p2 = pos[e.target]
+
+        sc_x = p2[0] - (p1[0] + 1)
+        if sc_x < 0:
+            sc_x *= 2
+
+        dist = abs(sc_x) + max(0, abs(p2[1] - p1[1]) - 0.5)
+        score += dist
+
+    return score ** 2
