@@ -331,10 +331,12 @@ class GraphDiagram:
 
     def input_pos(self, comp_or_ada, idx):
         if isinstance(comp_or_ada, IComponent):
-            in_sp = self.component_size[1] / len(comp_or_ada.inputs)
+            cnt = len(comp_or_ada.inputs)
+            inv_idx = cnt - 1 - idx
+            in_sp = self.component_size[1] / cnt
             return (
                 -self.comp_slot_size[0],
-                in_sp / 2 + in_sp * idx - self.comp_slot_size[1] / 2,
+                in_sp / 2 + in_sp * inv_idx - self.comp_slot_size[1] / 2,
             )
         else:
             return (
@@ -344,10 +346,12 @@ class GraphDiagram:
 
     def output_pos(self, comp_or_ada, idx):
         if isinstance(comp_or_ada, IComponent):
-            out_sp = self.component_size[1] / len(comp_or_ada.outputs)
+            cnt = len(comp_or_ada.outputs)
+            inv_idx = cnt - 1 - idx
+            out_sp = self.component_size[1] / cnt
             return (
                 self.component_size[0],
-                out_sp / 2 + out_sp * idx - self.comp_slot_size[1] / 2,
+                out_sp / 2 + out_sp * inv_idx - self.comp_slot_size[1] / 2,
             )
         else:
             return (
