@@ -3,10 +3,10 @@ from finam.core.interfaces import IComponent
 from matplotlib import patches, text
 from matplotlib.path import Path
 
-from finam_graph.comp_analyzer import CompAnalyzer
+from finam_graph.graph import Graph
 
 
-class CompDiagram:
+class GraphDiagram:
     def __init__(
         self,
         grid_size=(200, 100),
@@ -34,8 +34,7 @@ class CompDiagram:
         ) / 2
 
     def draw(self, composition, positions, show=True, save_path=None):
-        analyzer = CompAnalyzer(composition)
-        components, adapters, edges = analyzer.get_graph()
+        graph = Graph(composition)
 
         plt.ion()
 
@@ -69,13 +68,13 @@ class CompDiagram:
         ax.set_xlim(*x_lim)
         ax.set_ylim(*y_lim)
 
-        for comp in components:
+        for comp in graph.components:
             self.draw_component(comp, positions[comp], ax)
 
-        for ad in adapters:
+        for ad in graph.adapters:
             self.draw_adapter(ad, positions[ad], ax)
 
-        for edge in edges:
+        for edge in graph.edges:
             self.draw_edge(edge, positions, ax)
 
         if save_path is not None:

@@ -8,7 +8,7 @@ from finam.core.sdk import ATimeComponent, Input
 from finam.data.grid import Grid, GridSpec
 from finam.modules.generators import CallbackGenerator
 
-from finam_graph.diagram import CompDiagram
+from finam_graph.diagram import GraphDiagram
 
 
 class MockupComponent(ATimeComponent):
@@ -83,4 +83,4 @@ if __name__ == "__main__":
         consumer3: (2, 3),
     }
 
-    CompDiagram().draw(composition, pos, save_path="examples/graph.svg")
+    GraphDiagram().draw(composition, pos, save_path="examples/graph.svg")

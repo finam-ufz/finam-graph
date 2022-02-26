@@ -8,38 +8,9 @@ from finam.core.schedule import Composition
 from finam.core.sdk import ATimeComponent, Input
 from finam.data.grid import Grid, GridSpec
 from finam.modules.generators import CallbackGenerator
+from finam.modules.callback import CallbackComponent
 
-from finam_graph.comp_analyzer import CompAnalyzer
-
-
-class MockupComponent(ATimeComponent):
-    def __init__(self, start, step):
-        super(MockupComponent, self).__init__()
-        self._time = start
-        self._step = step
-        self._status = ComponentStatus.CREATED
-
-    def initialize(self):
-        super().initialize()
-        self._inputs["Input"] = Input()
-        self._status = ComponentStatus.INITIALIZED
-
-    def connect(self):
-        super().connect()
-        self._status = ComponentStatus.CONNECTED
-
-    def validate(self):
-        super().validate()
-        self._status = ComponentStatus.VALIDATED
-
-    def update(self):
-        super().update()
-        self._time += self._step
-        self._status = ComponentStatus.UPDATED
-
-    def finalize(self):
-        super().finalize()
-        self._status = ComponentStatus.FINALIZED
+from finam_graph.graph import Graph
 
 
 def generate_grid():
@@ -53,8 +24,20 @@ class TestCompAnalyzer(unittest.TestCase):
             start=datetime(2000, 1, 1),
             step=timedelta(days=7),
         )
-        consumer = MockupComponent(start=datetime(2000, 1, 1), step=timedelta(days=1))
-        consumer2 = MockupComponent(start=datetime(2000, 1, 1), step=timedelta(days=1))
+        consumer = CallbackComponent(
+            inputs=["Input"],
+            outputs=[],
+            callback=lambda data, t: {},
+            start=datetime(2000, 1, 1),
+            step=timedelta(days=1),
+        )
+        consumer2 = CallbackComponent(
+            inputs=["Input"],
+            outputs=[],
+            callback=lambda data, t: {},
+            start=datetime(2000, 1, 1),
+            step=timedelta(days=1),
+        )
 
         grid_to_val = base.GridToValue(np.mean)
         grid_to_val2 = base.GridToValue(np.mean)
@@ -72,10 +55,7 @@ class TestCompAnalyzer(unittest.TestCase):
 
         _ = source.outputs["Grid"] >> grid_to_val2 >> consumer2.inputs["Input"]
 
-        analyzer = CompAnalyzer(composition)
-
-        comps, adapters, edges = analyzer.get_graph()
-
-        self.assertEqual(len(comps), 3)
-        self.assertEqual(len(adapters), 3)
-        self.assertEqual(len(edges), 5)
+        graph = Graph(composition)
+        self.assertEqual(len(graph.components), 3)
+        self.assertEqual(len(graph.adapters), 3)
+        self.assertEqual(len(graph.edges), 5)
