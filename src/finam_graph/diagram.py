@@ -17,11 +17,13 @@ class GraphDiagram:
         self,
         grid_size=(200, 100),
         component_size=(120, 80),
-        adapter_size=(120, 40),
-        margin=30,
+        adapter_size=(120, 30),
+        margin=50,
         comp_slot_size=(30, 14),
         adap_slot_size=(10, 10),
         curve_size=30,
+        max_label_length=25,
+        max_slot_label_length=10,
     ):
         self.grid_size = grid_size
         self.component_size = component_size
@@ -31,6 +33,8 @@ class GraphDiagram:
         self.comp_slot_size = comp_slot_size
         self.adap_slot_size = adap_slot_size
         self.curve_size = curve_size
+        self.max_label_length = max_label_length
+        self.max_slot_label_length = max_slot_label_length
 
         self.component_offset = (grid_size[0] - component_size[0]) / 2, (
             grid_size[1] - component_size[1]
@@ -235,7 +239,7 @@ class GraphDiagram:
                 axes.text(
                     xll + xlli + 2,
                     yll + ylli + self.comp_slot_size[1] / 2,
-                    n,
+                    shorten_str(n, self.max_slot_label_length),
                     ha="left",
                     va="center",
                     size=7,
@@ -255,7 +259,7 @@ class GraphDiagram:
                 axes.text(
                     xll + xllo + 2,
                     yll + yllo + self.comp_slot_size[1] / 2,
-                    n,
+                    shorten_str(n, self.max_slot_label_length),
                     ha="left",
                     va="center",
                     size=7,
@@ -264,7 +268,7 @@ class GraphDiagram:
         axes.text(
             xll + self.component_size[0] / 2,
             yll + self.component_size[1] / 2,
-            name.replace("Component", "Co."),
+            shorten_str(name.replace("Component", "Co"), self.max_label_length),
             ha="center",
             va="center",
             size=8,
@@ -307,7 +311,7 @@ class GraphDiagram:
         axes.text(
             xll + self.adapter_size[0] / 2,
             yll + self.adapter_size[1] / 2,
-            name.replace("Adapter", "Cd."),
+            shorten_str(name.replace("Adapter", "Cd."), self.max_label_length),
             ha="center",
             va="center",
             size=8,
@@ -350,6 +354,12 @@ class GraphDiagram:
                 self.adapter_size[0],
                 self.adapter_size[1] / 2 - self.adap_slot_size[1] / 2,
             )
+
+
+def shorten_str(s, max_length):
+    if len(s) > max_length:
+        return "%s." % s[0 : (max(1, max_length - 1))]
+    return s
 
 
 def optimize_positions(graph: Graph, max_iterations):
