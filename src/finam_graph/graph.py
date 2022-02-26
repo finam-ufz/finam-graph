@@ -17,6 +17,12 @@ def _get_graph(composition):
             src = inp.get_source()
             if isinstance(src, IAdapter):
                 edges.add(Edge(src, None, 0, comp, n, i))
+            else:
+                for comp2 in components:
+                    for ii, (nm, out) in enumerate(comp2.outputs.items()):
+                        if out == src:
+                            edges.add(Edge(comp2, nm, ii, comp, n, i))
+
         for i, (n, out) in enumerate(comp.outputs.items()):
             for trg in out.get_targets():
                 if isinstance(trg, IAdapter):

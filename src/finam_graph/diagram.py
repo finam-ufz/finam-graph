@@ -42,13 +42,11 @@ class GraphDiagram:
         self.selected_cell = None
         self.show_grid = False
 
-    def draw(self, composition, positions=None, show=True, save_path=None):
+    def draw(self, composition, positions=None, show=True, block=True, save_path=None):
         graph = Graph(composition)
 
         if positions is None:
             positions = optimize_positions(graph)
-
-        plt.ion()
 
         figure, ax = plt.subplots(figsize=(12, 6))
         figure.canvas.set_window_title("Graph - SPACE for grid, click to re-arrange")
@@ -95,9 +93,16 @@ class GraphDiagram:
                     self.show_grid = not self.show_grid
                     self.repaint(graph, positions, ax)
 
+            def on_close(_event):
+                plt.close(figure)
+                plt.ioff()
+
             cid = figure.canvas.mpl_connect("button_press_event", onclick)
             cid = figure.canvas.mpl_connect("key_press_event", on_press)
-            plt.show(block=True)
+            cid = figure.canvas.mpl_connect("close_event", on_close)
+
+            plt.ion()
+            plt.show(block=block)
 
     def repaint(self, graph, positions, axes: Axes):
         while bool(axes.patches):
