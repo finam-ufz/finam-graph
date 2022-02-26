@@ -72,6 +72,11 @@ if __name__ == "__main__":
 
     _ = source.outputs["Scalar"] >> lin_interp2 >> consumer3.inputs["Input"]
 
+    # With automatic placement
+    GraphDiagram().draw(composition, save_path="examples/graph.svg")
+
+    # With manual placement
+    """
     pos = {
         source: (0, 2),
         grid_to_val: (1, 2),
@@ -82,5 +87,5 @@ if __name__ == "__main__":
         lin_interp2: (1, 3),
         consumer3: (2, 3),
     }
-
     GraphDiagram().draw(composition, pos, save_path="examples/graph.svg")
+    """

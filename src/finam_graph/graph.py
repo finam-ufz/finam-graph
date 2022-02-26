@@ -13,22 +13,22 @@ def _get_graph(composition):
     edges = set()
 
     for comp in components:
-        for n, inp in comp.inputs.items():
+        for i, (n, inp) in enumerate(comp.inputs.items()):
             src = inp.get_source()
             if isinstance(src, IAdapter):
-                edges.add(Edge(src, None, comp, n))
-        for n, out in comp.outputs.items():
+                edges.add(Edge(src, None, 0, comp, n, i))
+        for i, (n, out) in enumerate(comp.outputs.items()):
             for trg in out.get_targets():
                 if isinstance(trg, IAdapter):
-                    edges.add(Edge(comp, n, trg, None))
+                    edges.add(Edge(comp, n, i, trg, None, 0))
 
     for ad in adapters:
         src = ad.get_source()
         if isinstance(src, IAdapter):
-            edges.add(Edge(src, None, ad, None))
+            edges.add(Edge(src, None, 0, ad, None, 0))
         for trg in ad.get_targets():
             if isinstance(trg, IAdapter):
-                edges.add(Edge(ad, None, trg, None))
+                edges.add(Edge(ad, None, 0, trg, None, 0))
 
     return components, adapters, edges
 
@@ -61,11 +61,13 @@ def _trace_output(out: IOutput, out_adapters: set):
 
 
 class Edge:
-    def __init__(self, source, out_name, target, in_name):
+    def __init__(self, source, out_name, out_index, target, in_name, in_index):
         self.source = source
         self.out_name = out_name
+        self.out_index = out_index
         self.target = target
         self.in_name = in_name
+        self.in_index = in_index
 
     def __hash__(self):
         return hash((self.source, self.out_name, self.target, self.in_name))

@@ -1,6 +1,12 @@
+import math
+import random
+import numpy as np
+
 import matplotlib.pyplot as plt
 from finam.core.interfaces import IComponent
-from matplotlib import patches, text
+from matplotlib import patches
+from matplotlib.axes import Axes
+from matplotlib.backend_bases import MouseButton
 from matplotlib.path import Path
 
 from finam_graph.graph import Graph
@@ -10,9 +16,9 @@ class GraphDiagram:
     def __init__(
         self,
         grid_size=(200, 100),
-        component_size=(140, 80),
+        component_size=(120, 80),
         adapter_size=(120, 40),
-        margin=20,
+        margin=30,
         comp_slot_size=(30, 14),
         adap_slot_size=(10, 10),
         curve_size=30,
@@ -33,16 +39,71 @@ class GraphDiagram:
             grid_size[1] - adapter_size[1]
         ) / 2
 
-    def draw(self, composition, positions, show=True, save_path=None):
+        self.selected_cell = None
+        self.show_grid = False
+
+    def draw(self, composition, positions=None, show=True, save_path=None):
         graph = Graph(composition)
+
+        if positions is None:
+            positions = optimize_positions(graph)
 
         plt.ion()
 
         figure, ax = plt.subplots(figsize=(12, 6))
+        figure.canvas.set_window_title("Graph - SPACE for grid, click to re-arrange")
+
         ax.axis("off")
         ax.set_aspect("equal")
 
         figure.subplots_adjust(left=0, right=1, top=1, bottom=0)
+
+        self.repaint(graph, positions, ax)
+
+        if save_path is not None:
+            plt.savefig(save_path)
+
+        if show:
+
+            def onclick(event):
+                if event.xdata is None:
+                    return
+
+                if event.button == MouseButton.RIGHT:
+                    self.selected_cell = None
+                    self.repaint(graph, positions, ax)
+                    return
+
+                xdata, ydata = event.xdata, event.ydata
+                cell = int(math.floor(xdata / self.grid_size[0])), int(
+                    math.floor(ydata / self.grid_size[1])
+                )
+
+                if self.selected_cell is None:
+                    for k, v in positions.items():
+                        if v == cell:
+                            self.selected_cell = k
+                            self.repaint(graph, positions, ax)
+                            break
+                else:
+                    positions[self.selected_cell] = cell
+                    self.selected_cell = None
+                    self.repaint(graph, positions, ax)
+
+            def on_press(event):
+                if event.key == " ":
+                    self.show_grid = not self.show_grid
+                    self.repaint(graph, positions, ax)
+
+            cid = figure.canvas.mpl_connect("button_press_event", onclick)
+            cid = figure.canvas.mpl_connect("key_press_event", on_press)
+            plt.show(block=True)
+
+    def repaint(self, graph, positions, axes: Axes):
+        while bool(axes.patches):
+            axes.patches[0].remove()
+        while bool(axes.texts):
+            axes.texts[0].remove()
 
         x_min, y_min = 99999, 99999
         x_max, y_max = -99999, -99999
@@ -65,25 +126,34 @@ class GraphDiagram:
             (y_max + 1) * self.grid_size[1] + self.margin,
         )
 
-        ax.set_xlim(*x_lim)
-        ax.set_ylim(*y_lim)
+        axes.set_xlim(*x_lim)
+        axes.set_ylim(*y_lim)
+
+        if self.show_grid:
+            self.draw_grid((x_min, y_min), (x_max, y_max), axes)
 
         for comp in graph.components:
-            self.draw_component(comp, positions[comp], ax)
+            self.draw_component(comp, positions[comp], axes)
 
         for ad in graph.adapters:
-            self.draw_adapter(ad, positions[ad], ax)
+            self.draw_adapter(ad, positions[ad], axes)
 
         for edge in graph.edges:
-            self.draw_edge(edge, positions, ax)
+            self.draw_edge(edge, positions, axes)
 
-        if save_path is not None:
-            plt.savefig(save_path)
+    def draw_grid(self, lower, upper, axes: Axes):
+        for i in range(lower[0] - 1, upper[0] + 2):
+            for j in range(lower[1] - 1, upper[1] + 2):
+                rect = patches.Rectangle(
+                    (i * self.grid_size[0], j * self.grid_size[1]),
+                    *self.grid_size,
+                    linewidth=1,
+                    edgecolor="lightgrey",
+                    facecolor="none",
+                )
+                axes.add_patch(rect)
 
-        if show:
-            plt.show(block=True)
-
-    def draw_edge(self, edge, positions, axes):
+    def draw_edge(self, edge, positions, axes: Axes):
         src_pos = self.comp_pos(edge.source, positions[edge.source])
         trg_pos = self.comp_pos(edge.target, positions[edge.target])
 
@@ -122,7 +192,7 @@ class GraphDiagram:
 
         axes.add_patch(pp1)
 
-    def draw_component(self, comp, position, axes):
+    def draw_component(self, comp, position, axes: Axes):
         name = comp.__class__.__name__
         xll, yll = self.comp_pos(comp, position)
 
@@ -131,18 +201,9 @@ class GraphDiagram:
             *self.component_size,
             linewidth=1,
             edgecolor="k",
-            facecolor="lightblue",
+            facecolor="blue" if self.selected_cell == comp else "lightblue",
         )
-        txt = text.Text(
-            xll + self.component_size[0] / 2,
-            yll + self.component_size[1] / 2,
-            name.replace("Component", "Co."),
-            ha="center",
-            va="center",
-            size=8,
-        )
-
-        axes.add_artist(rect)
+        axes.add_patch(rect)
 
         if len(comp.inputs) > 0:
             for i, n in enumerate(comp.inputs.keys()):
@@ -154,7 +215,8 @@ class GraphDiagram:
                     edgecolor="k",
                     facecolor="lightgrey",
                 )
-                txt_in = text.Text(
+                axes.add_patch(inp)
+                axes.text(
                     xll + xlli + 2,
                     yll + ylli + self.comp_slot_size[1] / 2,
                     n,
@@ -162,9 +224,6 @@ class GraphDiagram:
                     va="center",
                     size=7,
                 )
-
-                axes.add_artist(inp)
-                axes.add_artist(txt_in)
 
         if len(comp.outputs) > 0:
             for i, n in enumerate(comp.outputs.keys()):
@@ -176,7 +235,8 @@ class GraphDiagram:
                     edgecolor="k",
                     facecolor="white",
                 )
-                txt_out = text.Text(
+                axes.add_patch(inp)
+                axes.text(
                     xll + xllo + 2,
                     yll + yllo + self.comp_slot_size[1] / 2,
                     n,
@@ -184,12 +244,17 @@ class GraphDiagram:
                     va="center",
                     size=7,
                 )
-                axes.add_artist(inp)
-                axes.add_artist(txt_out)
 
-        axes.add_artist(txt)
+        axes.text(
+            xll + self.component_size[0] / 2,
+            yll + self.component_size[1] / 2,
+            name.replace("Component", "Co."),
+            ha="center",
+            va="center",
+            size=8,
+        )
 
-    def draw_adapter(self, comp, position, axes):
+    def draw_adapter(self, comp, position, axes: Axes):
         name = comp.__class__.__name__
         xll, yll = self.comp_pos(comp, position)
 
@@ -198,15 +263,7 @@ class GraphDiagram:
             *self.adapter_size,
             linewidth=1,
             edgecolor="k",
-            facecolor="orange",
-        )
-        txt = text.Text(
-            xll + self.adapter_size[0] / 2,
-            yll + self.adapter_size[1] / 2,
-            name.replace("Adapter", "Cd."),
-            ha="center",
-            va="center",
-            size=8,
+            facecolor="red" if self.selected_cell == comp else "orange",
         )
 
         xlli, ylli = self.input_pos(comp, 0)
@@ -227,10 +284,18 @@ class GraphDiagram:
             facecolor="white",
         )
 
-        axes.add_artist(rect)
-        axes.add_artist(inp)
-        axes.add_artist(out)
-        axes.add_artist(txt)
+        axes.add_patch(rect)
+        axes.add_patch(inp)
+        axes.add_patch(out)
+
+        axes.text(
+            xll + self.adapter_size[0] / 2,
+            yll + self.adapter_size[1] / 2,
+            name.replace("Adapter", "Cd."),
+            ha="center",
+            va="center",
+            size=8,
+        )
 
     def comp_pos(self, comp_or_ada, pos):
         if isinstance(comp_or_ada, IComponent):
@@ -269,3 +334,78 @@ class GraphDiagram:
                 self.adapter_size[0],
                 self.adapter_size[1] / 2 - self.adap_slot_size[1] / 2,
             )
+
+
+def optimize_positions(graph: Graph):
+    count = len(graph.components) + len(graph.adapters)
+    grid = np.ndarray((count, count), dtype=object)
+    pos = {}
+
+    for c in set.union(graph.components, graph.adapters):
+        while True:
+            x, y = np.random.randint(0, count, 2)
+            if grid[x, y] is None:
+                grid[x, y] = c
+                break
+        pos[c] = x, y
+
+    score = rate_positions(pos, graph.edges)
+
+    nodes = list(pos.keys())
+    last_improvement = 0
+
+    print("Optimizing graph layout...")
+    for i in range(25000):
+        pos_new = dict(pos)
+        grid_new = grid.copy()
+
+        for j in range(random.randrange(1, 5)):
+            node = np.random.choice(nodes)
+            x, y = np.random.randint(0, count, 2)
+
+            node_here = grid_new[x, y]
+            if node_here == node:
+                continue
+
+            if node_here is None:
+                grid_new[pos_new[node]] = None
+                grid_new[x, y] = node
+                pos_new[node] = (x, y)
+            else:
+                grid_new[pos_new[node]] = node_here
+                grid_new[x, y] = node
+                pos_new[node_here] = pos_new[node]
+                pos_new[node] = (x, y)
+
+        score_new = rate_positions(pos_new, graph.edges)
+
+        if score_new <= score:
+            if score_new < score:
+                last_improvement = i
+
+            pos = pos_new
+            grid = grid_new
+            score = score_new
+
+        if i > 2500 and i > 4 * last_improvement:
+            break
+
+    print("Done (%d iterations, score %s)" % (i + 1, score))
+
+    return pos
+
+
+def rate_positions(pos, edges):
+    score = 0.0
+    for e in edges:
+        p1 = pos[e.source]
+        p2 = pos[e.target]
+
+        sc_x = p2[0] - (p1[0] + 1)
+        if sc_x < 0:
+            sc_x *= 2
+
+        dist = abs(sc_x) + max(0, abs(p2[1] - p1[1]) - 0.5)
+        score += dist
+
+    return score**2
