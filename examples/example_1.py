@@ -61,7 +61,6 @@ if __name__ == "__main__":
     grid_to_val = base.GridToValue(np.mean)
     grid_to_val2 = base.GridToValue(np.mean)
     lin_interp = time.LinearInterpolation()
-    lin_interp2 = time.LinearInterpolation()
 
     composition = Composition([source, consumer, consumer2, consumer3])
     composition.initialize()
@@ -70,7 +69,7 @@ if __name__ == "__main__":
 
     _ = source.outputs["Grid"] >> grid_to_val2 >> consumer2.inputs["Input"]
 
-    _ = source.outputs["Scalar"] >> lin_interp2 >> consumer3.inputs["Input"]
+    _ = source.outputs["Scalar"] >> consumer3.inputs["Input"]
 
     # With automatic placement
     GraphDiagram().draw(composition, save_path="examples/graph.svg")
@@ -84,7 +83,6 @@ if __name__ == "__main__":
         consumer: (3, 2),
         grid_to_val2: (1, 1),
         consumer2: (2, 1),
-        lin_interp2: (1, 3),
         consumer3: (2, 3),
     }
     GraphDiagram().draw(composition, pos, save_path="examples/graph.svg")

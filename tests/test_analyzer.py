@@ -40,7 +40,6 @@ class TestCompAnalyzer(unittest.TestCase):
         )
 
         grid_to_val = base.GridToValue(np.mean)
-        grid_to_val2 = base.GridToValue(np.mean)
         lin_interp = time.LinearInterpolation()
 
         composition = Composition([source, consumer, consumer2])
@@ -53,9 +52,9 @@ class TestCompAnalyzer(unittest.TestCase):
             >> consumer.inputs["Input"]
         )
 
-        _ = source.outputs["Grid"] >> grid_to_val2 >> consumer2.inputs["Input"]
+        _ = source.outputs["Grid"] >> consumer2.inputs["Input"]
 
         graph = Graph(composition)
         self.assertEqual(len(graph.components), 3)
-        self.assertEqual(len(graph.adapters), 3)
-        self.assertEqual(len(graph.edges), 5)
+        self.assertEqual(len(graph.adapters), 2)
+        self.assertEqual(len(graph.edges), 4)
