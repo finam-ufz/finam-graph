@@ -42,7 +42,15 @@ class GraphDiagram:
         self.selected_cell = None
         self.show_grid = False
 
-    def draw(self, composition, positions=None, show=True, block=True, save_path=None, max_iterations=25000):
+    def draw(
+        self,
+        composition,
+        positions=None,
+        show=True,
+        block=True,
+        save_path=None,
+        max_iterations=25000,
+    ):
         graph = Graph(composition)
 
         if positions is None:
@@ -185,8 +193,11 @@ class GraphDiagram:
         )
         p4 = trg_pos[0] + in_off[0], trg_pos[1] + in_off[1] + in_size[1] / 2
 
-        p2 = p1[0] + self.curve_size, p1[1]
-        p3 = p4[0] - self.curve_size, p4[1]
+        dx = abs(p4[0] - p1[0])
+        curve_sz = max(self.curve_size, dx / 2)
+
+        p2 = p1[0] + curve_sz, p1[1]
+        p3 = p4[0] - curve_sz, p4[1]
 
         pp1 = patches.PathPatch(
             Path(
