@@ -19,5 +19,5 @@ positions = {
     comp_b: (1, 0),
 }
 
-CompDiagram().draw(composition, positions, save_path="graph.svg")
+GraphDiagram().draw(composition, positions, save_path="graph.svg")
 ```
