@@ -355,7 +355,7 @@ def optimize_positions(graph: Graph):
     last_improvement = 0
 
     print("Optimizing graph layout...")
-    for i in range(100000):
+    for i in range(25000):
         pos_new = dict(pos)
         grid_new = grid.copy()
 
@@ -379,15 +379,18 @@ def optimize_positions(graph: Graph):
 
         score_new = rate_positions(pos_new, graph.edges)
 
-        if score_new < score:
+        if score_new <= score:
+            if score_new < score:
+                last_improvement = i
+
             pos = pos_new
             grid = grid_new
             score = score_new
-            last_improvement = i
 
-        if i > 2500 and i > 3 * last_improvement:
-            print("Done (%d iterations, score %s)" % (i, score))
+        if i > 2500 and i > 4 * last_improvement:
             break
+
+    print("Done (%d iterations, score %s)" % (i + 1, score))
 
     return pos
 
