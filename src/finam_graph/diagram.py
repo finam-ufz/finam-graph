@@ -405,4 +405,4 @@ def rate_positions(pos, edges):
         dist = abs(sc_x) + max(0, abs(p2[1] - p1[1]) - 0.5)
         score += dist
 
-    return score ** 2
+    return score**2

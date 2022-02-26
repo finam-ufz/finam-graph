@@ -14,10 +14,5 @@ composition.initialize()
 
 comp_a.outputs["Out"] >> comp_b.inputs["In"]
 
-positions = {
-    comp_a: (0, 0),
-    comp_b: (1, 0),
-}
-
-GraphDiagram().draw(composition, positions, save_path="graph.svg")
+GraphDiagram().draw(composition, save_path="graph.svg")
 ```
