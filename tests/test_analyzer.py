@@ -59,3 +59,4 @@ class TestCompAnalyzer(unittest.TestCase):
         self.assertEqual(len(graph.adapters), 2)
         self.assertEqual(len(graph.edges), 4)
         self.assertEqual(len(graph.direct_edges), 2)
+        self.assertEqual(len(graph.simple_edges), 2)
