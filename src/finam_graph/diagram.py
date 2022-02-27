@@ -12,6 +12,8 @@ from finam_graph.graph import Graph
 
 
 class GraphDiagram:
+    """Diagram drawer"""
+
     def __init__(
         self,
         grid_size=(160, 100),
@@ -29,6 +31,25 @@ class GraphDiagram:
         adapter_color="orange",
         selected_adapter_color="red",
     ):
+        """
+        Constructs a graph diagram drawer with style parameters
+
+        :param grid_size: Size of grid cells for alignment
+        :param component_size: Size of component boxes
+        :param adapter_size: Size of adapter boxes
+        :param margin: Margin around all boxes
+        :param comp_slot_size: Input and output slot size for components
+        :param adap_slot_size: Input and output slot size for adapters
+        :param curve_size: Connection curve "radius" (control point distance)
+        :param max_label_length: Maximum number of letters in component and adapter labels
+        :param max_slot_label_length: Maximum number of letters in input and output slot labels
+        :param comp_color: Component color
+        :param time_comp_color: TimeComponent color
+        :param selected_comp_color: Component color for selection
+        :param adapter_color: Adapter color
+        :param selected_adapter_color: Adapter color for selection
+        """
+
         self.grid_size = grid_size
         self.component_size = component_size
         self.adapter_size = adapter_size
@@ -59,7 +80,7 @@ class GraphDiagram:
     def draw(
         self,
         composition,
-        adapters=True,
+        show_adapters=True,
         positions=None,
         show=True,
         block=True,
@@ -67,6 +88,18 @@ class GraphDiagram:
         max_iterations=25000,
         seed=None,
     ):
+        """
+        Draw a graph diagram.
+
+        :param composition: The composition to draw a graph diagram for
+        :param show_adapters: Whether to show adapters
+        :param positions: Dictionary of grid cell position tuples per component/adapter
+        :param show: Whether to show the diagram
+        :param block: Should the diagram be shown in blocking mode?
+        :param save_path: Path to save image file. Default: None (i.e. don't save)
+        :param max_iterations: Maximum iterations for optimizing node placement. Default: 25000
+        :param seed: Random seed for the optimizer. Default: None
+        """
         rng = (
             np.random.default_rng()
             if seed is None
@@ -75,7 +108,7 @@ class GraphDiagram:
         graph = Graph(composition)
 
         if positions is None:
-            positions = optimize_positions(graph, rng, adapters, max_iterations)
+            positions = optimize_positions(graph, rng, show_adapters, max_iterations)
 
         figure, ax = plt.subplots(figsize=(12, 6))
         figure.canvas.set_window_title("Graph - SPACE for grid, click to re-arrange")
@@ -85,7 +118,7 @@ class GraphDiagram:
 
         figure.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
-        self.repaint(graph, positions, adapters, ax)
+        self.repaint(graph, positions, show_adapters, ax)
 
         if save_path is not None:
             plt.savefig(save_path)
@@ -98,7 +131,7 @@ class GraphDiagram:
 
                 if event.button == MouseButton.RIGHT:
                     self.selected_cell = None
-                    self.repaint(graph, positions, adapters, ax)
+                    self.repaint(graph, positions, show_adapters, ax)
                     return
 
                 xdata, ydata = event.xdata, event.ydata
@@ -110,17 +143,17 @@ class GraphDiagram:
                     for k, v in positions.items():
                         if v == cell:
                             self.selected_cell = k
-                            self.repaint(graph, positions, adapters, ax)
+                            self.repaint(graph, positions, show_adapters, ax)
                             break
                 else:
                     positions[self.selected_cell] = cell
                     self.selected_cell = None
-                    self.repaint(graph, positions, adapters, ax)
+                    self.repaint(graph, positions, show_adapters, ax)
 
             def on_press(event):
                 if event.key == " ":
                     self.show_grid = not self.show_grid
-                    self.repaint(graph, positions, adapters, ax)
+                    self.repaint(graph, positions, show_adapters, ax)
 
             def on_close(_event):
                 plt.close(figure)
@@ -133,7 +166,7 @@ class GraphDiagram:
             plt.ion()
             plt.show(block=block)
 
-    def repaint(self, graph, positions, adapters: bool, axes: Axes):
+    def repaint(self, graph, positions, show_adapters: bool, axes: Axes):
         while bool(axes.patches):
             axes.patches[0].remove()
         while bool(axes.texts):
@@ -169,13 +202,13 @@ class GraphDiagram:
         for comp in graph.components:
             self.draw_component(comp, positions[comp], axes)
 
-        if adapters:
+        if show_adapters:
             for ad in graph.adapters:
                 self.draw_adapter(ad, positions[ad], axes)
 
-        edges = graph.edges if adapters else graph.direct_edges
+        edges = graph.edges if show_adapters else graph.direct_edges
         for edge in edges:
-            self.draw_edge(edge, positions, adapters, axes)
+            self.draw_edge(edge, positions, show_adapters, axes)
 
     def draw_grid(self, lower, upper, axes: Axes):
         for i in range(lower[0] - 1, upper[0] + 2):
@@ -189,7 +222,7 @@ class GraphDiagram:
                 )
                 axes.add_patch(rect)
 
-    def draw_edge(self, edge, positions, adapters: bool, axes: Axes):
+    def draw_edge(self, edge, positions, show_adapters: bool, axes: Axes):
         src_pos = self.comp_pos(edge.source, positions[edge.source])
         trg_pos = self.comp_pos(edge.target, positions[edge.target])
 
@@ -231,7 +264,7 @@ class GraphDiagram:
 
         axes.add_patch(pp1)
 
-        if edge.num_adapters > 0 and not adapters:
+        if edge.num_adapters > 0 and not show_adapters:
             pc = (p1[0] + p4[0]) / 2, (p1[1] + p4[1]) / 2
             rect = patches.Rectangle(
                 (pc[0] - 4, pc[1] - 4),
@@ -413,16 +446,18 @@ def shorten_str(s, max_length):
     return s
 
 
-def optimize_positions(graph: Graph, rng, adapters: bool, max_iterations: int):
+def optimize_positions(graph: Graph, rng, show_adapters: bool, max_iterations: int):
     length = len(graph.components)
-    if adapters:
+    if show_adapters:
         length += len(graph.adapters)
     size = math.ceil(math.sqrt(length)) * 3
     grid = np.ndarray((size, size), dtype=object)
     pos = {}
 
     all_mods = (
-        set.union(graph.components, graph.adapters) if adapters else graph.components
+        set.union(graph.components, graph.adapters)
+        if show_adapters
+        else graph.components
     )
     for c in all_mods:
         while True:
@@ -432,7 +467,7 @@ def optimize_positions(graph: Graph, rng, adapters: bool, max_iterations: int):
                 break
         pos[c] = x, y
 
-    score = rate_positions(pos, graph.edges if adapters else graph.direct_edges)
+    score = rate_positions(pos, graph.edges if show_adapters else graph.direct_edges)
 
     nodes = list(pos.keys())
     nodes.sort(key=lambda co: co.__class__.__name__)
@@ -465,7 +500,7 @@ def optimize_positions(graph: Graph, rng, adapters: bool, max_iterations: int):
                 pos_new[node] = (x, y)
 
         score_new = rate_positions(
-            pos_new, graph.edges if adapters else graph.direct_edges
+            pos_new, graph.edges if show_adapters else graph.direct_edges
         )
 
         if score_new <= score:
