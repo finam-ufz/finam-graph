@@ -49,6 +49,7 @@ class GraphDiagram:
     def draw(
         self,
         composition,
+        adapters=True,
         positions=None,
         show=True,
         block=True,
@@ -58,7 +59,7 @@ class GraphDiagram:
         graph = Graph(composition)
 
         if positions is None:
-            positions = optimize_positions(graph, max_iterations)
+            positions = optimize_positions(graph, adapters, max_iterations)
 
         figure, ax = plt.subplots(figsize=(12, 6))
         figure.canvas.set_window_title("Graph - SPACE for grid, click to re-arrange")
@@ -68,7 +69,7 @@ class GraphDiagram:
 
         figure.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
-        self.repaint(graph, positions, ax)
+        self.repaint(graph, positions, adapters, ax)
 
         if save_path is not None:
             plt.savefig(save_path)
@@ -81,7 +82,7 @@ class GraphDiagram:
 
                 if event.button == MouseButton.RIGHT:
                     self.selected_cell = None
-                    self.repaint(graph, positions, ax)
+                    self.repaint(graph, positions, adapters, ax)
                     return
 
                 xdata, ydata = event.xdata, event.ydata
@@ -93,17 +94,17 @@ class GraphDiagram:
                     for k, v in positions.items():
                         if v == cell:
                             self.selected_cell = k
-                            self.repaint(graph, positions, ax)
+                            self.repaint(graph, positions, adapters, ax)
                             break
                 else:
                     positions[self.selected_cell] = cell
                     self.selected_cell = None
-                    self.repaint(graph, positions, ax)
+                    self.repaint(graph, positions, adapters, ax)
 
             def on_press(event):
                 if event.key == " ":
                     self.show_grid = not self.show_grid
-                    self.repaint(graph, positions, ax)
+                    self.repaint(graph, positions, adapters, ax)
 
             def on_close(_event):
                 plt.close(figure)
@@ -116,7 +117,7 @@ class GraphDiagram:
             plt.ion()
             plt.show(block=block)
 
-    def repaint(self, graph, positions, axes: Axes):
+    def repaint(self, graph, positions, adapters: bool, axes: Axes):
         while bool(axes.patches):
             axes.patches[0].remove()
         while bool(axes.texts):
@@ -152,10 +153,12 @@ class GraphDiagram:
         for comp in graph.components:
             self.draw_component(comp, positions[comp], axes)
 
-        for ad in graph.adapters:
-            self.draw_adapter(ad, positions[ad], axes)
+        if adapters:
+            for ad in graph.adapters:
+                self.draw_adapter(ad, positions[ad], axes)
 
-        for edge in graph.edges:
+        edges = graph.edges if adapters else graph.direct_edges
+        for edge in edges:
             self.draw_edge(edge, positions, axes)
 
     def draw_grid(self, lower, upper, axes: Axes):
@@ -366,12 +369,18 @@ def shorten_str(s, max_length):
     return s
 
 
-def optimize_positions(graph: Graph, max_iterations):
-    size = math.ceil(math.sqrt(len(graph.components) + len(graph.adapters))) * 2
+def optimize_positions(graph: Graph, adapters: bool, max_iterations: int):
+    length = len(graph.components)
+    if adapters:
+        length += len(graph.adapters)
+    size = math.ceil(math.sqrt(length)) * 2
     grid = np.ndarray((size, size), dtype=object)
     pos = {}
 
-    for c in set.union(graph.components, graph.adapters):
+    all_mods = (
+        set.union(graph.components, graph.adapters) if adapters else graph.components
+    )
+    for c in all_mods:
         while True:
             x, y = np.random.randint(0, size, 2)
             if grid[x, y] is None:
@@ -379,7 +388,7 @@ def optimize_positions(graph: Graph, max_iterations):
                 break
         pos[c] = x, y
 
-    score = rate_positions(pos, graph.edges)
+    score = rate_positions(pos, graph.edges if adapters else graph.direct_edges)
 
     nodes = list(pos.keys())
     last_improvement = 0
@@ -409,7 +418,9 @@ def optimize_positions(graph: Graph, max_iterations):
                 pos_new[node_here] = pos_new[node]
                 pos_new[node] = (x, y)
 
-        score_new = rate_positions(pos_new, graph.edges)
+        score_new = rate_positions(
+            pos_new, graph.edges if adapters else graph.direct_edges
+        )
 
         if score_new <= score:
             if score_new < score:
