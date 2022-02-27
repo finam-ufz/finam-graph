@@ -1,14 +1,14 @@
-from finam.core.interfaces import IInput, IAdapter, IOutput
+from finam.core.interfaces import IInput, IAdapter, IOutput, IComponent
 from finam.core.schedule import Composition
 
 
 class Graph:
     def __init__(self, comp: Composition):
-        self.components, self.adapters, self.edges = _get_graph(comp)
+        self.components, self.adapters, self.edges, self.direct_edges = _get_graph(comp)
 
 
 def _get_graph(composition):
-    components, adapters = _get_graph_nodes(composition)
+    components, adapters, direct_edges = _get_graph_nodes(composition)
 
     edges = set()
 
@@ -22,6 +22,7 @@ def _get_graph(composition):
                     for ii, (nm, out) in enumerate(comp2.outputs.items()):
                         if out == src:
                             edges.add(Edge(comp2, nm, ii, comp, n, i))
+                            break
 
         for i, (n, out) in enumerate(comp.outputs.items()):
             for trg in out.get_targets():
@@ -36,27 +37,40 @@ def _get_graph(composition):
             if isinstance(trg, IAdapter):
                 edges.add(Edge(ad, None, 0, trg, None, 0))
 
-    return components, adapters, edges
+    return components, adapters, edges, direct_edges
 
 
 def _get_graph_nodes(composition):
     components = set(composition.modules)
     adapters = set()
+    direct_edges = set()
 
     for comp in components:
-        for _n, inp in comp.inputs.items():
-            _trace_input(inp, adapters)
+        for i, (n, inp) in enumerate(comp.inputs.items()):
+            out = _trace_input(inp, adapters)
+            if out is not None:
+                for comp2 in components:
+                    for ii, (nm, src) in enumerate(comp2.outputs.items()):
+                        if out == src:
+                            direct_edges.add(Edge(comp2, nm, ii, comp, n, i))
+                            break
+
         for _n, out in comp.outputs.items():
             _trace_output(out, adapters)
 
-    return components, adapters
+    return components, adapters, direct_edges
 
 
 def _trace_input(inp: IInput, out_adapters: set):
     src = inp.get_source()
+    if src is None:
+        return None
+
     if isinstance(src, IAdapter):
         out_adapters.add(src)
-        _trace_input(src, out_adapters)
+        return _trace_input(src, out_adapters)
+    else:
+        return src
 
 
 def _trace_output(out: IOutput, out_adapters: set):
