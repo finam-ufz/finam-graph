@@ -4,6 +4,8 @@ A tool for visualizing FINAM model linkage setups.
 
 ![graph.svg](https://git.ufz.de/FINAM/finam-graph/uploads/2542cdd9ee03e1ccf0fc274d9859c1ec/graph.svg)
 
+![graph.svg](https://git.ufz.de/FINAM/finam-graph/uploads/2910f3eb9c13923b8654cb0834132298/graph_simple.svg)
+
 This tool analyzed FINAM coupling setups to extract the linkage graph, and renders it as a flow diagram.
 The placement of graph nodes (components and adapters) is optimized to some extent, but scripted and interactive placement are also possible.
 
