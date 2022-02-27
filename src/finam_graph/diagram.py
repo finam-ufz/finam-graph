@@ -83,6 +83,7 @@ class GraphDiagram:
     def draw(
         self,
         composition,
+        simple=False,
         show_adapters=True,
         positions=None,
         show=True,
@@ -95,6 +96,7 @@ class GraphDiagram:
         Draw a graph diagram.
 
         :param composition: The composition to draw a graph diagram for
+        :param simple: Whether to draw a simplified version without slots
         :param show_adapters: Whether to show adapters
         :param positions: Dictionary of grid cell position tuples per component/adapter
         :param show: Whether to show the diagram
@@ -103,6 +105,9 @@ class GraphDiagram:
         :param max_iterations: Maximum iterations for optimizing node placement. Default: 25000
         :param seed: Random seed for the optimizer. Default: None
         """
+        if simple:
+            show_adapters = False
+
         rng = (
             np.random.default_rng()
             if seed is None
@@ -111,7 +116,9 @@ class GraphDiagram:
         graph = Graph(composition)
 
         if positions is None:
-            positions = optimize_positions(graph, rng, show_adapters, max_iterations)
+            positions = optimize_positions(
+                graph, rng, simple, show_adapters, max_iterations
+            )
 
         figure, ax = plt.subplots(figsize=(12, 6))
         figure.canvas.set_window_title("Graph - SPACE for grid, click to re-arrange")
@@ -121,7 +128,7 @@ class GraphDiagram:
 
         figure.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
-        self.repaint(graph, positions, show_adapters, ax)
+        self.repaint(graph, positions, simple, show_adapters, ax)
 
         if save_path is not None:
             plt.savefig(save_path)
@@ -134,7 +141,7 @@ class GraphDiagram:
 
                 if event.button == MouseButton.RIGHT:
                     self.selected_cell = None
-                    self.repaint(graph, positions, show_adapters, ax)
+                    self.repaint(graph, positions, simple, show_adapters, ax)
                     return
 
                 xdata, ydata = event.xdata, event.ydata
@@ -146,17 +153,17 @@ class GraphDiagram:
                     for k, v in positions.items():
                         if v == cell:
                             self.selected_cell = k
-                            self.repaint(graph, positions, show_adapters, ax)
+                            self.repaint(graph, positions, simple, show_adapters, ax)
                             break
                 else:
                     positions[self.selected_cell] = cell
                     self.selected_cell = None
-                    self.repaint(graph, positions, show_adapters, ax)
+                    self.repaint(graph, positions, simple, show_adapters, ax)
 
             def on_press(event):
                 if event.key == " ":
                     self.show_grid = not self.show_grid
-                    self.repaint(graph, positions, show_adapters, ax)
+                    self.repaint(graph, positions, simple, show_adapters, ax)
 
             def on_close(_event):
                 plt.close(figure)
@@ -169,7 +176,7 @@ class GraphDiagram:
             plt.ion()
             plt.show(block=block)
 
-    def repaint(self, graph, positions, show_adapters: bool, axes: Axes):
+    def repaint(self, graph, positions, simple: bool, show_adapters: bool, axes: Axes):
         while bool(axes.patches):
             axes.patches[0].remove()
         while bool(axes.texts):
@@ -202,16 +209,22 @@ class GraphDiagram:
         if self.show_grid:
             self.draw_grid((x_min, y_min), (x_max, y_max), axes)
 
+        comp_patches = {}
         for comp in graph.components:
-            self.draw_component(comp, positions[comp], axes)
+            comp_patches[comp] = self.draw_component(
+                comp, positions[comp], simple, axes
+            )
 
         if show_adapters:
             for ad in graph.adapters:
                 self.draw_adapter(ad, positions[ad], axes)
 
-        edges = graph.edges if show_adapters else graph.direct_edges
-        for edge in edges:
-            self.draw_edge(edge, positions, show_adapters, axes)
+        if simple:
+            self.draw_edges_simple(graph.simple_edges, positions, comp_patches, axes)
+        else:
+            edges = graph.edges if show_adapters else graph.direct_edges
+            for edge in edges:
+                self.draw_edge(edge, positions, show_adapters, axes)
 
     def draw_grid(self, lower, upper, axes: Axes):
         for i in range(lower[0] - 1, upper[0] + 2):
@@ -224,6 +237,43 @@ class GraphDiagram:
                     facecolor="none",
                 )
                 axes.add_patch(rect)
+
+    def draw_edges_simple(self, simple_edges, positions, comp_patches, axes: Axes):
+        drawn = set()
+        for source, target in simple_edges:
+            if (source, target) in drawn:
+                continue
+
+            bidir = (target, source) in simple_edges
+            if bidir:
+                drawn.add((target, source))
+
+            src_pos = self.comp_pos(source, positions[source])
+            trg_pos = self.comp_pos(target, positions[target])
+
+            src_pos = (
+                src_pos[0] + self.component_size[0] / 2,
+                src_pos[1] + self.component_size[1] / 2,
+            )
+            trg_pos = (
+                trg_pos[0] + self.component_size[0] / 2,
+                trg_pos[1] + self.component_size[1] / 2,
+            )
+
+            style = "<|-|>" if bidir else "-|>"
+            arr = patches.ConnectionPatch(
+                src_pos,
+                trg_pos,
+                "data",
+                "data",
+                patchA=comp_patches[source],
+                patchB=comp_patches[target],
+                arrowstyle=style,
+                mutation_scale=20,
+                fc="w",
+            )
+
+            axes.add_patch(arr)
 
     def draw_edge(self, edge, positions, show_adapters: bool, axes: Axes):
         src_pos = self.comp_pos(edge.source, positions[edge.source])
@@ -287,7 +337,7 @@ class GraphDiagram:
                 size=6,
             )
 
-    def draw_component(self, comp, position, axes: Axes):
+    def draw_component(self, comp, position, simple, axes: Axes):
         name = comp.__class__.__name__
         xll, yll = self.comp_pos(comp, position)
 
@@ -307,45 +357,46 @@ class GraphDiagram:
         )
         axes.add_patch(rect)
 
-        if len(comp.inputs) > 0:
-            for i, n in enumerate(comp.inputs.keys()):
-                xlli, ylli = self.input_pos(comp, i)
-                inp = patches.Rectangle(
-                    (xll + xlli, yll + ylli),
-                    *self.comp_slot_size,
-                    linewidth=1,
-                    edgecolor="k",
-                    facecolor="lightgrey",
-                )
-                axes.add_patch(inp)
-                axes.text(
-                    xll + xlli + 2,
-                    yll + ylli + self.comp_slot_size[1] / 2,
-                    shorten_str(n, self.max_slot_label_length),
-                    ha="left",
-                    va="center",
-                    size=7,
-                )
+        if not simple:
+            if len(comp.inputs) > 0:
+                for i, n in enumerate(comp.inputs.keys()):
+                    xlli, ylli = self.input_pos(comp, i)
+                    inp = patches.Rectangle(
+                        (xll + xlli, yll + ylli),
+                        *self.comp_slot_size,
+                        linewidth=1,
+                        edgecolor="k",
+                        facecolor="lightgrey",
+                    )
+                    axes.add_patch(inp)
+                    axes.text(
+                        xll + xlli + 2,
+                        yll + ylli + self.comp_slot_size[1] / 2,
+                        shorten_str(n, self.max_slot_label_length),
+                        ha="left",
+                        va="center",
+                        size=7,
+                    )
 
-        if len(comp.outputs) > 0:
-            for i, n in enumerate(comp.outputs.keys()):
-                xllo, yllo = self.output_pos(comp, i)
-                inp = patches.Rectangle(
-                    (xll + xllo, yll + yllo),
-                    *self.comp_slot_size,
-                    linewidth=1,
-                    edgecolor="k",
-                    facecolor="white",
-                )
-                axes.add_patch(inp)
-                axes.text(
-                    xll + xllo + 2,
-                    yll + yllo + self.comp_slot_size[1] / 2,
-                    shorten_str(n, self.max_slot_label_length),
-                    ha="left",
-                    va="center",
-                    size=7,
-                )
+            if len(comp.outputs) > 0:
+                for i, n in enumerate(comp.outputs.keys()):
+                    xllo, yllo = self.output_pos(comp, i)
+                    inp = patches.Rectangle(
+                        (xll + xllo, yll + yllo),
+                        *self.comp_slot_size,
+                        linewidth=1,
+                        edgecolor="k",
+                        facecolor="white",
+                    )
+                    axes.add_patch(inp)
+                    axes.text(
+                        xll + xllo + 2,
+                        yll + yllo + self.comp_slot_size[1] / 2,
+                        shorten_str(n, self.max_slot_label_length),
+                        ha="left",
+                        va="center",
+                        size=7,
+                    )
 
         axes.text(
             xll + self.component_size[0] / 2,
@@ -355,6 +406,8 @@ class GraphDiagram:
             va="center",
             size=8,
         )
+
+        return rect
 
     def draw_adapter(self, comp, position, axes: Axes):
         name = comp.__class__.__name__
@@ -451,7 +504,9 @@ def shorten_str(s, max_length):
     return s
 
 
-def optimize_positions(graph: Graph, rng, show_adapters: bool, max_iterations: int):
+def optimize_positions(
+    graph: Graph, rng, simple: bool, show_adapters: bool, max_iterations: int
+):
     length = len(graph.components)
     if show_adapters:
         length += len(graph.adapters)
@@ -472,7 +527,9 @@ def optimize_positions(graph: Graph, rng, show_adapters: bool, max_iterations: i
                 break
         pos[c] = x, y
 
-    score = rate_positions(pos, graph.edges if show_adapters else graph.direct_edges)
+    score = rate_positions(
+        pos, graph.edges if show_adapters else graph.direct_edges, simple
+    )
 
     nodes = list(pos.keys())
     nodes.sort(key=lambda co: co.__class__.__name__)
@@ -505,7 +562,7 @@ def optimize_positions(graph: Graph, rng, show_adapters: bool, max_iterations: i
                 pos_new[node] = (x, y)
 
         score_new = rate_positions(
-            pos_new, graph.edges if show_adapters else graph.direct_edges
+            pos_new, graph.edges if show_adapters else graph.direct_edges, simple
         )
 
         if score_new <= score:
@@ -524,23 +581,32 @@ def optimize_positions(graph: Graph, rng, show_adapters: bool, max_iterations: i
     return pos
 
 
-def rate_positions(pos, edges):
+def rate_positions(pos, edges, simple: bool):
     score = 0.0
-    for e in edges:
-        p1 = pos[e.source]
-        p2 = pos[e.target]
 
-        dx = p2[0] - (p1[0] + 1)
+    if simple:
+        for e in edges:
+            p1 = pos[e.source]
+            p2 = pos[e.target]
 
-        sc_rev_same_row = 0
-        sc_x = dx
-        if dx < 0:
-            if p2[1] == p1[1]:
-                sc_rev_same_row = 5
-            if dx < -1:
-                sc_x *= 2
+            dist = abs(p2[0] - p1[0]) + abs(p2[1] - p1[1])
+            score += dist
+    else:
+        for e in edges:
+            p1 = pos[e.source]
+            p2 = pos[e.target]
 
-        dist = abs(sc_x) + max(0, abs(p2[1] - p1[1]) - 0.5) + sc_rev_same_row
-        score += dist
+            dx = p2[0] - (p1[0] + 1)
+
+            sc_rev_same_row = 0
+            sc_x = dx
+            if dx < 0:
+                if p2[1] == p1[1]:
+                    sc_rev_same_row = 5
+                if dx < -1:
+                    sc_x *= 2
+
+            dist = abs(sc_x) + max(0, abs(p2[1] - p1[1]) - 0.5) + sc_rev_same_row
+            score += dist
 
     return score**2

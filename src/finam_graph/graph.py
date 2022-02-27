@@ -6,6 +6,10 @@ class Graph:
     def __init__(self, comp: Composition):
         self.components, self.adapters, self.edges, self.direct_edges = _get_graph(comp)
 
+        self.simple_edges = set()
+        for edge in self.direct_edges:
+            self.simple_edges.add((edge.source, edge.target))
+
 
 def _get_graph(composition):
     components, adapters, direct_edges = _get_graph_nodes(composition)
