@@ -23,6 +23,7 @@ class GraphDiagram:
         comp_slot_size=(30, 14),
         adap_slot_size=(10, 10),
         curve_size=20,
+        corner_radius=5,
         max_label_length=12,
         max_slot_label_length=6,
         comp_color="lightgreen",
@@ -41,6 +42,7 @@ class GraphDiagram:
         :param comp_slot_size: Input and output slot size for components
         :param adap_slot_size: Input and output slot size for adapters
         :param curve_size: Connection curve "radius" (control point distance)
+        :param corner_radius: Radius for rounded corners
         :param max_label_length: Maximum number of letters in component and adapter labels
         :param max_slot_label_length: Maximum number of letters in input and output slot labels
         :param comp_color: Component color
@@ -58,6 +60,7 @@ class GraphDiagram:
         self.comp_slot_size = comp_slot_size
         self.adap_slot_size = adap_slot_size
         self.curve_size = curve_size
+        self.corner_radius = corner_radius
         self.max_label_length = max_label_length
         self.max_slot_label_length = max_slot_label_length
 
@@ -288,9 +291,10 @@ class GraphDiagram:
         name = comp.__class__.__name__
         xll, yll = self.comp_pos(comp, position)
 
-        rect = patches.Rectangle(
+        rect = patches.FancyBboxPatch(
             (xll, yll),
             *self.component_size,
+            boxstyle="round,rounding_size=%f" % (self.corner_radius,),
             linewidth=1,
             edgecolor="k",
             facecolor=self.selected_comp_color
@@ -356,9 +360,10 @@ class GraphDiagram:
         name = comp.__class__.__name__
         xll, yll = self.comp_pos(comp, position)
 
-        rect = patches.Rectangle(
+        rect = patches.FancyBboxPatch(
             (xll, yll),
             *self.adapter_size,
+            boxstyle="round, pad=0, rounding_size=%f" % (self.corner_radius,),
             linewidth=1,
             edgecolor="k",
             facecolor=self.selected_adapter_color
