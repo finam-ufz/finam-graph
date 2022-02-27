@@ -1,4 +1,4 @@
-from finam.core.interfaces import IInput, IAdapter, IOutput, IComponent
+from finam.core.interfaces import IInput, IAdapter, IOutput
 from finam.core.schedule import Composition
 
 

@@ -1,5 +1,4 @@
 import math
-import random
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -55,11 +54,13 @@ class GraphDiagram:
         block=True,
         save_path=None,
         max_iterations=25000,
+        seed=None
     ):
+        rng = np.random.default_rng() if seed is None else np.random.default_rng(seed=seed)
         graph = Graph(composition)
 
         if positions is None:
-            positions = optimize_positions(graph, adapters, max_iterations)
+            positions = optimize_positions(graph, rng, adapters, max_iterations)
 
         figure, ax = plt.subplots(figsize=(12, 6))
         figure.canvas.set_window_title("Graph - SPACE for grid, click to re-arrange")
@@ -369,7 +370,7 @@ def shorten_str(s, max_length):
     return s
 
 
-def optimize_positions(graph: Graph, adapters: bool, max_iterations: int):
+def optimize_positions(graph: Graph, rng, adapters: bool, max_iterations: int):
     length = len(graph.components)
     if adapters:
         length += len(graph.adapters)
@@ -382,7 +383,7 @@ def optimize_positions(graph: Graph, adapters: bool, max_iterations: int):
     )
     for c in all_mods:
         while True:
-            x, y = np.random.randint(0, size, 2)
+            x, y = rng.integers(0, size, 2)
             if grid[x, y] is None:
                 grid[x, y] = c
                 break
@@ -391,6 +392,8 @@ def optimize_positions(graph: Graph, adapters: bool, max_iterations: int):
     score = rate_positions(pos, graph.edges if adapters else graph.direct_edges)
 
     nodes = list(pos.keys())
+    nodes.sort(key=lambda co: co.__class__.__name__)
+
     last_improvement = 0
 
     print("Optimizing graph layout...")
@@ -400,9 +403,9 @@ def optimize_positions(graph: Graph, adapters: bool, max_iterations: int):
         pos_new = dict(pos)
         grid_new = grid.copy()
 
-        for j in range(random.randrange(1, 5)):
-            node = np.random.choice(nodes)
-            x, y = np.random.randint(0, size, 2)
+        for j in range(rng.integers(1, 5, 1)[0]):
+            node = rng.choice(nodes)
+            x, y = rng.integers(0, size, 2)
 
             node_here = grid_new[x, y]
             if node_here == node:
@@ -445,7 +448,7 @@ def rate_positions(pos, edges):
         p2 = pos[e.target]
 
         sc_x = p2[0] - (p1[0] + 1)
-        if sc_x < 0:
+        if sc_x < -1:
             sc_x *= 2
 
         dist = abs(sc_x) + max(0, abs(p2[1] - p1[1]) - 0.5)
