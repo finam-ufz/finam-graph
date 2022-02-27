@@ -86,6 +86,7 @@ class GraphDiagram:
         simple=False,
         show_adapters=True,
         positions=None,
+        colors={},
         show=True,
         block=True,
         save_path=None,
@@ -99,6 +100,7 @@ class GraphDiagram:
         :param simple: Whether to draw a simplified version without slots
         :param show_adapters: Whether to show adapters
         :param positions: Dictionary of grid cell position tuples per component/adapter
+        :param colors: Dictionary of component/adapter color overrides
         :param show: Whether to show the diagram
         :param block: Should the diagram be shown in blocking mode?
         :param save_path: Path to save image file. Default: None (i.e. don't save)
@@ -128,7 +130,7 @@ class GraphDiagram:
 
         figure.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
-        self.repaint(graph, positions, simple, show_adapters, ax)
+        self.repaint(graph, positions, colors, simple, show_adapters, ax)
 
         if save_path is not None:
             plt.savefig(save_path)
@@ -141,7 +143,7 @@ class GraphDiagram:
 
                 if event.button == MouseButton.RIGHT:
                     self.selected_cell = None
-                    self.repaint(graph, positions, simple, show_adapters, ax)
+                    self.repaint(graph, positions, colors, simple, show_adapters, ax)
                     return
 
                 xdata, ydata = event.xdata, event.ydata
@@ -153,17 +155,19 @@ class GraphDiagram:
                     for k, v in positions.items():
                         if v == cell:
                             self.selected_cell = k
-                            self.repaint(graph, positions, simple, show_adapters, ax)
+                            self.repaint(
+                                graph, positions, colors, simple, show_adapters, ax
+                            )
                             break
                 else:
                     positions[self.selected_cell] = cell
                     self.selected_cell = None
-                    self.repaint(graph, positions, simple, show_adapters, ax)
+                    self.repaint(graph, positions, colors, simple, show_adapters, ax)
 
             def on_press(event):
                 if event.key == " ":
                     self.show_grid = not self.show_grid
-                    self.repaint(graph, positions, simple, show_adapters, ax)
+                    self.repaint(graph, positions, colors, simple, show_adapters, ax)
 
             def on_close(_event):
                 plt.close(figure)
@@ -176,7 +180,9 @@ class GraphDiagram:
             plt.ion()
             plt.show(block=block)
 
-    def repaint(self, graph, positions, simple: bool, show_adapters: bool, axes: Axes):
+    def repaint(
+        self, graph, positions, colors, simple: bool, show_adapters: bool, axes: Axes
+    ):
         while bool(axes.patches):
             axes.patches[0].remove()
         while bool(axes.texts):
@@ -212,12 +218,12 @@ class GraphDiagram:
         comp_patches = {}
         for comp in graph.components:
             comp_patches[comp] = self.draw_component(
-                comp, positions[comp], simple, axes
+                comp, positions[comp], colors.get(comp), simple, axes
             )
 
         if show_adapters:
             for ad in graph.adapters:
-                self.draw_adapter(ad, positions[ad], axes)
+                self.draw_adapter(ad, positions[ad], colors.get(ad), axes)
 
         if simple:
             self.draw_edges_simple(graph.simple_edges, positions, comp_patches, axes)
@@ -337,7 +343,7 @@ class GraphDiagram:
                 size=6,
             )
 
-    def draw_component(self, comp, position, simple, axes: Axes):
+    def draw_component(self, comp, position, color, simple, axes: Axes):
         name = comp.__class__.__name__
         xll, yll = self.comp_pos(comp, position)
 
@@ -349,7 +355,8 @@ class GraphDiagram:
             edgecolor="k",
             facecolor=self.selected_comp_color
             if self.selected_cell == comp
-            else (
+            else color
+            or (
                 self.time_comp_color
                 if isinstance(comp, ITimeComponent)
                 else self.comp_color
@@ -409,7 +416,7 @@ class GraphDiagram:
 
         return rect
 
-    def draw_adapter(self, comp, position, axes: Axes):
+    def draw_adapter(self, comp, position, color, axes: Axes):
         name = comp.__class__.__name__
         xll, yll = self.comp_pos(comp, position)
 
@@ -421,7 +428,7 @@ class GraphDiagram:
             edgecolor="k",
             facecolor=self.selected_adapter_color
             if self.selected_cell == comp
-            else self.adapter_color,
+            else color or self.adapter_color,
         )
 
         xlli, ylli = self.input_pos(comp, 0)
