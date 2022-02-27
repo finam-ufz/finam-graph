@@ -1,9 +1,8 @@
 import math
-import random
 import numpy as np
 
 import matplotlib.pyplot as plt
-from finam.core.interfaces import IComponent
+from finam.core.interfaces import IComponent, ITimeComponent
 from matplotlib import patches
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import MouseButton
@@ -21,9 +20,14 @@ class GraphDiagram:
         margin=50,
         comp_slot_size=(30, 14),
         adap_slot_size=(10, 10),
-        curve_size=30,
+        curve_size=20,
         max_label_length=12,
         max_slot_label_length=6,
+        comp_color="lightgreen",
+        time_comp_color="lightblue",
+        selected_comp_color="blue",
+        adapter_color="orange",
+        selected_adapter_color="red",
     ):
         self.grid_size = grid_size
         self.component_size = component_size
@@ -35,6 +39,12 @@ class GraphDiagram:
         self.curve_size = curve_size
         self.max_label_length = max_label_length
         self.max_slot_label_length = max_slot_label_length
+
+        self.comp_color = comp_color
+        self.time_comp_color = time_comp_color
+        self.selected_comp_color = selected_comp_color
+        self.adapter_color = adapter_color
+        self.selected_adapter_color = selected_adapter_color
 
         self.component_offset = (grid_size[0] - component_size[0]) / 2, (
             grid_size[1] - component_size[1]
@@ -49,16 +59,23 @@ class GraphDiagram:
     def draw(
         self,
         composition,
+        adapters=True,
         positions=None,
         show=True,
         block=True,
         save_path=None,
         max_iterations=25000,
+        seed=None,
     ):
+        rng = (
+            np.random.default_rng()
+            if seed is None
+            else np.random.default_rng(seed=seed)
+        )
         graph = Graph(composition)
 
         if positions is None:
-            positions = optimize_positions(graph, max_iterations)
+            positions = optimize_positions(graph, rng, adapters, max_iterations)
 
         figure, ax = plt.subplots(figsize=(12, 6))
         figure.canvas.set_window_title("Graph - SPACE for grid, click to re-arrange")
@@ -68,7 +85,7 @@ class GraphDiagram:
 
         figure.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
-        self.repaint(graph, positions, ax)
+        self.repaint(graph, positions, adapters, ax)
 
         if save_path is not None:
             plt.savefig(save_path)
@@ -81,7 +98,7 @@ class GraphDiagram:
 
                 if event.button == MouseButton.RIGHT:
                     self.selected_cell = None
-                    self.repaint(graph, positions, ax)
+                    self.repaint(graph, positions, adapters, ax)
                     return
 
                 xdata, ydata = event.xdata, event.ydata
@@ -93,17 +110,17 @@ class GraphDiagram:
                     for k, v in positions.items():
                         if v == cell:
                             self.selected_cell = k
-                            self.repaint(graph, positions, ax)
+                            self.repaint(graph, positions, adapters, ax)
                             break
                 else:
                     positions[self.selected_cell] = cell
                     self.selected_cell = None
-                    self.repaint(graph, positions, ax)
+                    self.repaint(graph, positions, adapters, ax)
 
             def on_press(event):
                 if event.key == " ":
                     self.show_grid = not self.show_grid
-                    self.repaint(graph, positions, ax)
+                    self.repaint(graph, positions, adapters, ax)
 
             def on_close(_event):
                 plt.close(figure)
@@ -116,7 +133,7 @@ class GraphDiagram:
             plt.ion()
             plt.show(block=block)
 
-    def repaint(self, graph, positions, axes: Axes):
+    def repaint(self, graph, positions, adapters: bool, axes: Axes):
         while bool(axes.patches):
             axes.patches[0].remove()
         while bool(axes.texts):
@@ -152,11 +169,13 @@ class GraphDiagram:
         for comp in graph.components:
             self.draw_component(comp, positions[comp], axes)
 
-        for ad in graph.adapters:
-            self.draw_adapter(ad, positions[ad], axes)
+        if adapters:
+            for ad in graph.adapters:
+                self.draw_adapter(ad, positions[ad], axes)
 
-        for edge in graph.edges:
-            self.draw_edge(edge, positions, axes)
+        edges = graph.edges if adapters else graph.direct_edges
+        for edge in edges:
+            self.draw_edge(edge, positions, adapters, axes)
 
     def draw_grid(self, lower, upper, axes: Axes):
         for i in range(lower[0] - 1, upper[0] + 2):
@@ -170,7 +189,7 @@ class GraphDiagram:
                 )
                 axes.add_patch(rect)
 
-    def draw_edge(self, edge, positions, axes: Axes):
+    def draw_edge(self, edge, positions, adapters: bool, axes: Axes):
         src_pos = self.comp_pos(edge.source, positions[edge.source])
         trg_pos = self.comp_pos(edge.target, positions[edge.target])
 
@@ -212,6 +231,26 @@ class GraphDiagram:
 
         axes.add_patch(pp1)
 
+        if edge.num_adapters > 0 and not adapters:
+            pc = (p1[0] + p4[0]) / 2, (p1[1] + p4[1]) / 2
+            rect = patches.Rectangle(
+                (pc[0] - 4, pc[1] - 4),
+                8,
+                8,
+                linewidth=1,
+                edgecolor="k",
+                facecolor=self.adapter_color,
+            )
+            axes.add_patch(rect)
+
+            axes.text(
+                *pc,
+                str(edge.num_adapters),
+                ha="center",
+                va="center",
+                size=6,
+            )
+
     def draw_component(self, comp, position, axes: Axes):
         name = comp.__class__.__name__
         xll, yll = self.comp_pos(comp, position)
@@ -221,7 +260,13 @@ class GraphDiagram:
             *self.component_size,
             linewidth=1,
             edgecolor="k",
-            facecolor="blue" if self.selected_cell == comp else "lightblue",
+            facecolor=self.selected_comp_color
+            if self.selected_cell == comp
+            else (
+                self.time_comp_color
+                if isinstance(comp, ITimeComponent)
+                else self.comp_color
+            ),
         )
         axes.add_patch(rect)
 
@@ -283,7 +328,9 @@ class GraphDiagram:
             *self.adapter_size,
             linewidth=1,
             edgecolor="k",
-            facecolor="red" if self.selected_cell == comp else "orange",
+            facecolor=self.selected_adapter_color
+            if self.selected_cell == comp
+            else self.adapter_color,
         )
 
         xlli, ylli = self.input_pos(comp, 0)
@@ -366,22 +413,30 @@ def shorten_str(s, max_length):
     return s
 
 
-def optimize_positions(graph: Graph, max_iterations):
-    size = math.ceil(math.sqrt(len(graph.components) + len(graph.adapters))) * 2
+def optimize_positions(graph: Graph, rng, adapters: bool, max_iterations: int):
+    length = len(graph.components)
+    if adapters:
+        length += len(graph.adapters)
+    size = math.ceil(math.sqrt(length)) * 3
     grid = np.ndarray((size, size), dtype=object)
     pos = {}
 
-    for c in set.union(graph.components, graph.adapters):
+    all_mods = (
+        set.union(graph.components, graph.adapters) if adapters else graph.components
+    )
+    for c in all_mods:
         while True:
-            x, y = np.random.randint(0, size, 2)
+            x, y = rng.integers(0, size, 2)
             if grid[x, y] is None:
                 grid[x, y] = c
                 break
         pos[c] = x, y
 
-    score = rate_positions(pos, graph.edges)
+    score = rate_positions(pos, graph.edges if adapters else graph.direct_edges)
 
     nodes = list(pos.keys())
+    nodes.sort(key=lambda co: co.__class__.__name__)
+
     last_improvement = 0
 
     print("Optimizing graph layout...")
@@ -391,9 +446,9 @@ def optimize_positions(graph: Graph, max_iterations):
         pos_new = dict(pos)
         grid_new = grid.copy()
 
-        for j in range(random.randrange(1, 5)):
-            node = np.random.choice(nodes)
-            x, y = np.random.randint(0, size, 2)
+        for j in range(rng.integers(1, 5, 1)[0]):
+            node = rng.choice(nodes)
+            x, y = rng.integers(0, size, 2)
 
             node_here = grid_new[x, y]
             if node_here == node:
@@ -409,7 +464,9 @@ def optimize_positions(graph: Graph, max_iterations):
                 pos_new[node_here] = pos_new[node]
                 pos_new[node] = (x, y)
 
-        score_new = rate_positions(pos_new, graph.edges)
+        score_new = rate_positions(
+            pos_new, graph.edges if adapters else graph.direct_edges
+        )
 
         if score_new <= score:
             if score_new < score:
@@ -433,11 +490,17 @@ def rate_positions(pos, edges):
         p1 = pos[e.source]
         p2 = pos[e.target]
 
-        sc_x = p2[0] - (p1[0] + 1)
-        if sc_x < 0:
-            sc_x *= 2
+        dx = p2[0] - (p1[0] + 1)
 
-        dist = abs(sc_x) + max(0, abs(p2[1] - p1[1]) - 0.5)
+        sc_rev_same_row = 0
+        sc_x = dx
+        if dx < 0:
+            if p2[1] == p1[1]:
+                sc_rev_same_row = 5
+            if dx < -1:
+                sc_x *= 2
+
+        dist = abs(sc_x) + max(0, abs(p2[1] - p1[1]) - 0.5) + sc_rev_same_row
         score += dist
 
     return score**2
