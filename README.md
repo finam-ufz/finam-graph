@@ -19,7 +19,13 @@ The placement of graph nodes (components and adapters) is optimized to some exte
 For **interactive placement**, simply click boxes to select, and click again to move them.
 It is recommended to enable the placement grid by pressing `SPACE`.
 
-**Usage:**
+## Installation
+
+```shell
+$ pip install git+https://git.ufz.de/FINAM/finam-graph.git
+```
+
+## Usage
 
 ```python
 # ...

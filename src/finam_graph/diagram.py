@@ -456,7 +456,7 @@ class GraphDiagram:
         axes.text(
             xll + self.adapter_size[0] / 2,
             yll + self.adapter_size[1] / 2,
-            shorten_str(name.replace("Adapter", "Cd."), self.max_label_length),
+            shorten_str(name.replace("Adapter", "Ad."), self.max_label_length),
             ha="center",
             va="center",
             size=8,
