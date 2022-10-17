@@ -9,9 +9,9 @@ from finam.modules.generators import CallbackGenerator
 from finam_graph import GraphDiagram
 
 
-def generate_grid(grid):
-    return np.random.random(grid.data_size).reshape(
-        shape=grid.data_shape, order=grid.order
+def generate_grid(grid_spec):
+    return np.random.random(grid_spec.data_size).reshape(
+        shape=grid_spec.data_shape, order=grid_spec.order
     )
 
 
@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     source = CallbackGenerator(
         callbacks={
-            "Grid": (lambda t: generate_grid(), Info(grid=grid)),
+            "Grid": (lambda t: generate_grid(grid), Info(grid=grid)),
             "Scalar": (lambda t: np.random.random(1)[0], Info(grid=NoGrid())),
         },
         start=datetime(2000, 1, 1),

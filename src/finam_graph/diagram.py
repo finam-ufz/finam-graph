@@ -183,7 +183,11 @@ class GraphDiagram:
             )
 
         figure, ax = plt.subplots(figsize=(12, 6))
-        figure.canvas.set_window_title("Graph - SPACE for grid, click to re-arrange")
+
+        if figure.canvas.manager is not None:
+            figure.canvas.manager.set_window_title(
+                "Graph - SPACE for grid, click to re-arrange"
+            )
 
         ax.axis("off")
         ax.set_aspect("equal")
