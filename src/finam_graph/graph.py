@@ -1,8 +1,11 @@
+"""Helpers for graph analysis"""
 from finam import Composition
 from finam.core.interfaces import IAdapter, IInput, IOutput
 
 
 class Graph:
+    """Container for graph data"""
+
     def __init__(self, comp: Composition):
         self.components, self.adapters, self.edges, self.direct_edges = _get_graph(comp)
 
@@ -14,6 +17,13 @@ class Graph:
 def _get_graph(composition):
     components, adapters, direct_edges = _get_graph_nodes(composition)
 
+    edges = _get_component_edges(components)
+    edges = edges.union(_get_adapter_edges(adapters))
+
+    return components, adapters, edges, direct_edges
+
+
+def _get_component_edges(components):
     edges = set()
 
     for comp in components:
@@ -21,17 +31,23 @@ def _get_graph(composition):
             src = inp.get_source()
             if isinstance(src, IAdapter):
                 edges.add(Edge(src, None, 0, comp, n, i, 0))
-            else:
-                for comp2 in components:
-                    for ii, (nm, out) in enumerate(comp2.outputs.items()):
-                        if out == src:
-                            edges.add(Edge(comp2, nm, ii, comp, n, i, 0))
-                            break
+                continue
+            for comp2 in components:
+                for ii, (nm, out) in enumerate(comp2.outputs.items()):
+                    if out == src:
+                        edges.add(Edge(comp2, nm, ii, comp, n, i, 0))
+                        break
 
         for i, (n, out) in enumerate(comp.outputs.items()):
             for trg in out.get_targets():
                 if isinstance(trg, IAdapter):
                     edges.add(Edge(comp, n, i, trg, None, 0, 0))
+
+    return edges
+
+
+def _get_adapter_edges(adapters):
+    edges = set()
 
     for ad in adapters:
         src = ad.get_source()
@@ -41,7 +57,7 @@ def _get_graph(composition):
             if isinstance(trg, IAdapter):
                 edges.add(Edge(ad, None, 0, trg, None, 0, 0))
 
-    return components, adapters, edges, direct_edges
+    return edges
 
 
 def _get_graph_nodes(composition):
@@ -52,12 +68,13 @@ def _get_graph_nodes(composition):
     for comp in components:
         for i, (n, inp) in enumerate(comp.inputs.items()):
             out, depth = _trace_input(inp, adapters)
-            if out is not None:
-                for comp2 in components:
-                    for ii, (nm, src) in enumerate(comp2.outputs.items()):
-                        if out == src:
-                            direct_edges.add(Edge(comp2, nm, ii, comp, n, i, depth))
-                            break
+            if out is None:
+                continue
+            for comp2 in components:
+                for ii, (nm, src) in enumerate(comp2.outputs.items()):
+                    if out == src:
+                        direct_edges.add(Edge(comp2, nm, ii, comp, n, i, depth))
+                        break
 
         for _n, out in comp.outputs.items():
             _trace_output(out, adapters)
@@ -73,8 +90,8 @@ def _trace_input(inp: IInput, out_adapters: set, depth=0):
     if isinstance(src, IAdapter):
         out_adapters.add(src)
         return _trace_input(src, out_adapters, depth + 1)
-    else:
-        return src, depth
+
+    return src, depth
 
 
 def _trace_output(out: IOutput, out_adapters: set):
@@ -85,6 +102,8 @@ def _trace_output(out: IOutput, out_adapters: set):
 
 
 class Edge:
+    """Representation of a graph edge"""
+
     def __init__(
         self, source, out_name, out_index, target, in_name, in_index, num_adapters
     ):
@@ -112,9 +131,7 @@ class Edge:
         )
 
     def __repr__(self):
-        return "%s[%s] -> %s[%s]" % (
-            self.source.__class__.__name__,
-            self.out_name or "-",
-            self.target.__class__.__name__,
-            self.in_name or "-",
+        return (
+            f"{self.source.__class__.__name__}[{self.out_name or '-'}] -> "
+            f"{self.target.__class__.__name__}[{self.in_name or '-'}]"
         )

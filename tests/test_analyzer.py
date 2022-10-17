@@ -2,10 +2,8 @@ import unittest
 from datetime import datetime, timedelta
 
 import numpy as np
-from finam import (ATimeComponent, ComponentStatus, Composition, Info, Input,
-                   NoGrid, UniformGrid)
+from finam import Composition, Info, NoGrid, UniformGrid
 from finam.adapters import base, time
-from finam.modules.callback import CallbackComponent
 from finam.modules.debug import DebugConsumer
 from finam.modules.generators import CallbackGenerator
 
