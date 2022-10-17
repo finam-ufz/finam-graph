@@ -12,8 +12,26 @@ from matplotlib.path import Path
 from finam_graph.graph import Graph
 
 
-class GraphDiagram:
-    """Diagram drawer"""
+class GraphSizes:
+    """Graph sizing properties
+
+    Parameters
+    ----------
+    grid_size : (int, int)
+        Size of grid cells for alignment
+    component_size : (int, int)
+        Size of component boxes
+    adapter_size : (int, int)
+        Size of adapter boxes
+    margin : int
+        Margin around all boxes
+    comp_slot_size : (int, int)
+        Input and output slot size for components
+    adap_slot_size : (int, int)
+        Input and output slot size for adapters
+    curve_size : int
+        Connection curve "radius" (control point distance)
+    """
 
     def __init__(
         self,
@@ -24,58 +42,85 @@ class GraphDiagram:
         comp_slot_size=(30, 14),
         adap_slot_size=(10, 10),
         curve_size=20,
-        corner_radius=5,
-        max_label_length=12,
-        max_slot_label_length=6,
+    ):
+        self.grid_size = grid_size
+        self.component_size = component_size
+        self.adapter_size = adapter_size
+        self.margin = margin
+
+        self.comp_slot_size = comp_slot_size
+        self.adap_slot_size = adap_slot_size
+        self.curve_size = curve_size
+
+
+class GraphColors:
+    """Graph coloring properties
+
+    Parameters
+    ----------
+    comp_color : str
+        Component color
+    time_comp_color : str
+        TimeComponent color
+    selected_comp_color : str
+        Component color for selection
+    adapter_color : str
+        Adapter color
+    selected_adapter_color : str
+        Adapter color for selection
+    """
+
+    def __init__(
+        self,
         comp_color="lightgreen",
         time_comp_color="lightblue",
         selected_comp_color="blue",
         adapter_color="orange",
         selected_adapter_color="red",
     ):
-        """
-        Constructs a graph diagram drawer with style parameters
-
-        :param grid_size: Size of grid cells for alignment
-        :param component_size: Size of component boxes
-        :param adapter_size: Size of adapter boxes
-        :param margin: Margin around all boxes
-        :param comp_slot_size: Input and output slot size for components
-        :param adap_slot_size: Input and output slot size for adapters
-        :param curve_size: Connection curve "radius" (control point distance)
-        :param corner_radius: Radius for rounded corners
-        :param max_label_length: Maximum number of letters in component and adapter labels
-        :param max_slot_label_length: Maximum number of letters in input and output slot labels
-        :param comp_color: Component color
-        :param time_comp_color: TimeComponent color
-        :param selected_comp_color: Component color for selection
-        :param adapter_color: Adapter color
-        :param selected_adapter_color: Adapter color for selection
-        """
-
-        self._grid_size = grid_size
-        self._component_size = component_size
-        self._adapter_size = adapter_size
-        self._margin = margin
-
-        self.comp_slot_size = comp_slot_size
-        self.adap_slot_size = adap_slot_size
-        self.curve_size = curve_size
-        self.corner_radius = corner_radius
-        self.max_label_length = max_label_length
-        self.max_slot_label_length = max_slot_label_length
-
         self.comp_color = comp_color
         self.time_comp_color = time_comp_color
         self.selected_comp_color = selected_comp_color
         self.adapter_color = adapter_color
         self.selected_adapter_color = selected_adapter_color
 
-        self.component_offset = (grid_size[0] - component_size[0]) / 2, (
-            grid_size[1] - component_size[1]
+
+class GraphDiagram:
+    """Diagram drawer
+
+    Parameters
+    ----------
+    sizes : GraphSizes
+        Graph sizing properties
+    colors : GraphColors
+        Graph coloring properties
+    corner_radius : int
+        Radius for rounded corners
+    max_label_length : int
+        Maximum number of characters in component and adapter labels
+    max_slot_label_length : int
+        Maximum number of characters in input and output slot labels
+    """
+
+    def __init__(
+        self,
+        sizes=GraphSizes(),
+        colors=GraphColors(),
+        corner_radius=5,
+        max_label_length=12,
+        max_slot_label_length=6,
+    ):
+        self.sizes = sizes
+        self.colors = colors
+        self.corner_radius = corner_radius
+        self.max_label_length = max_label_length
+        self.max_slot_label_length = max_slot_label_length
+
+        self.component_offset = (sizes.grid_size[0] - sizes.component_size[0]) / 2, (
+            sizes.grid_size[1] - sizes.component_size[1]
         ) / 2
-        self.adapter_offset = (grid_size[0] - adapter_size[0]) / 2, (
-            grid_size[1] - adapter_size[1]
+        self.adapter_offset = (sizes.grid_size[0] - sizes.adapter_size[0]) / 2, (
+            sizes.grid_size[1] - sizes.adapter_size[1]
         ) / 2
 
         self.selected_cell = None
@@ -97,16 +142,28 @@ class GraphDiagram:
         """
         Draw a graph diagram.
 
-        :param composition: The composition to draw a graph diagram for
-        :param simple: Whether to draw a simplified version without slots
-        :param show_adapters: Whether to show adapters
-        :param positions: Dictionary of grid cell position tuples per component/adapter
-        :param colors: Dictionary of component/adapter color overrides
-        :param show: Whether to show the diagram
-        :param block: Should the diagram be shown in blocking mode?
-        :param save_path: Path to save image file. Default: None (i.e. don't save)
-        :param max_iterations: Maximum iterations for optimizing node placement. Default: 25000
-        :param seed: Random seed for the optimizer. Default: None
+        Parameters
+        ----------
+        composition : Composition
+            The composition to draw a graph diagram for
+        simple : bool
+            Whether to draw a simplified version without slots
+        show_adapters : bool
+            Whether to show adapters
+        positions : dict
+            Dictionary of grid cell position tuples per component/adapter
+        colors : dict
+            Dictionary of component/adapter color overrides
+        show : bool
+            Whether to show the diagram
+        block : bool
+            Should the diagram be shown in blocking mode?
+        save_path : pathlike
+            Path to save image file. Default: None (i.e. don't save)
+        max_iterations : int
+            Maximum iterations for optimizing node placement. Default: 25000
+        seed : int
+            Random seed for the optimizer. Default: None
         """
         colors = colors or {}
 
@@ -150,8 +207,8 @@ class GraphDiagram:
                     return
 
                 xdata, ydata = event.xdata, event.ydata
-                cell = int(math.floor(xdata / self._grid_size[0])), int(
-                    math.floor(ydata / self._grid_size[1])
+                cell = int(math.floor(xdata / self.sizes.grid_size[0])), int(
+                    math.floor(ydata / self.sizes.grid_size[1])
                 )
 
                 if self.selected_cell is None:
@@ -220,12 +277,12 @@ class GraphDiagram:
 
     def _calc_limits(self, x_min_max, y_min_max):
         x_lim = (
-            x_min_max[0] * self._grid_size[0] - self._margin,
-            (x_min_max[1] + 1) * self._grid_size[0] + self._margin,
+            x_min_max[0] * self.sizes.grid_size[0] - self.sizes.margin,
+            (x_min_max[1] + 1) * self.sizes.grid_size[0] + self.sizes.margin,
         )
         y_lim = (
-            y_min_max[0] * self._grid_size[1] - self._margin,
-            (y_min_max[1] + 1) * self._grid_size[1] + self._margin,
+            y_min_max[0] * self.sizes.grid_size[1] - self.sizes.margin,
+            (y_min_max[1] + 1) * self.sizes.grid_size[1] + self.sizes.margin,
         )
         return x_lim, y_lim
 
@@ -233,8 +290,8 @@ class GraphDiagram:
         for i in range(lower[0] - 1, upper[0] + 2):
             for j in range(lower[1] - 1, upper[1] + 2):
                 rect = patches.Rectangle(
-                    (i * self._grid_size[0], j * self._grid_size[1]),
-                    *self._grid_size,
+                    (i * self.sizes.grid_size[0], j * self.sizes.grid_size[1]),
+                    *self.sizes.grid_size,
                     linewidth=1,
                     edgecolor="lightgrey",
                     facecolor="none",
@@ -255,12 +312,12 @@ class GraphDiagram:
             trg_pos = self._comp_pos(target, positions[target])
 
             src_pos = (
-                src_pos[0] + self._component_size[0] / 2,
-                src_pos[1] + self._component_size[1] / 2,
+                src_pos[0] + self.sizes.component_size[0] / 2,
+                src_pos[1] + self.sizes.component_size[1] / 2,
             )
             trg_pos = (
-                trg_pos[0] + self._component_size[0] / 2,
-                trg_pos[1] + self._component_size[1] / 2,
+                trg_pos[0] + self.sizes.component_size[0] / 2,
+                trg_pos[1] + self.sizes.component_size[1] / 2,
             )
 
             style = "<|-|>" if bidir else "-|>"
@@ -284,17 +341,17 @@ class GraphDiagram:
 
         if isinstance(edge.source, IComponent):
             out_idx = list(edge.source.outputs.keys()).index(edge.out_name)
-            out_size = self.comp_slot_size
+            out_size = self.sizes.comp_slot_size
         else:
             out_idx = 0
-            out_size = self.adap_slot_size
+            out_size = self.sizes.adap_slot_size
 
         if isinstance(edge.target, IComponent):
             in_idx = list(edge.target.inputs.keys()).index(edge.in_name)
-            in_size = self.comp_slot_size
+            in_size = self.sizes.comp_slot_size
         else:
             in_idx = 0
-            in_size = self.adap_slot_size
+            in_size = self.sizes.adap_slot_size
 
         out_off = self._output_pos(edge.source, out_idx)
         in_off = self._input_pos(edge.target, in_idx)
@@ -306,7 +363,7 @@ class GraphDiagram:
         p4 = trg_pos[0] + in_off[0], trg_pos[1] + in_off[1] + in_size[1] / 2
 
         dx = abs(p4[0] - p1[0])
-        curve_sz = max(self.curve_size, dx / 2)
+        curve_sz = max(self.sizes.curve_size, dx / 2)
 
         p2 = p1[0] + curve_sz, p1[1]
         p3 = p4[0] - curve_sz, p4[1]
@@ -330,7 +387,7 @@ class GraphDiagram:
                     8,
                     linewidth=1,
                     edgecolor="k",
-                    facecolor=self.adapter_color,
+                    facecolor=self.colors.adapter_color,
                 )
             )
 
@@ -348,17 +405,17 @@ class GraphDiagram:
 
         rect = patches.FancyBboxPatch(
             (xll, yll),
-            *self._component_size,
+            *self.sizes.component_size,
             boxstyle=f"round,rounding_size={self.corner_radius}",
             linewidth=1,
             edgecolor="k",
-            facecolor=self.selected_comp_color
+            facecolor=self.colors.selected_comp_color
             if self.selected_cell == comp
             else color
             or (
-                self.time_comp_color
+                self.colors.time_comp_color
                 if isinstance(comp, ITimeComponent)
-                else self.comp_color
+                else self.colors.comp_color
             ),
         )
         axes.add_patch(rect)
@@ -369,7 +426,7 @@ class GraphDiagram:
                     xlli, ylli = self._input_pos(comp, i)
                     inp = patches.Rectangle(
                         (xll + xlli, yll + ylli),
-                        *self.comp_slot_size,
+                        *self.sizes.comp_slot_size,
                         linewidth=1,
                         edgecolor="k",
                         facecolor="lightgrey",
@@ -377,7 +434,7 @@ class GraphDiagram:
                     axes.add_patch(inp)
                     axes.text(
                         xll + xlli + 2,
-                        yll + ylli + self.comp_slot_size[1] / 2,
+                        yll + ylli + self.sizes.comp_slot_size[1] / 2,
                         _shorten_str(n, self.max_slot_label_length),
                         ha="left",
                         va="center",
@@ -389,7 +446,7 @@ class GraphDiagram:
                     xllo, yllo = self._output_pos(comp, i)
                     inp = patches.Rectangle(
                         (xll + xllo, yll + yllo),
-                        *self.comp_slot_size,
+                        *self.sizes.comp_slot_size,
                         linewidth=1,
                         edgecolor="k",
                         facecolor="white",
@@ -397,7 +454,7 @@ class GraphDiagram:
                     axes.add_patch(inp)
                     axes.text(
                         xll + xllo + 2,
-                        yll + yllo + self.comp_slot_size[1] / 2,
+                        yll + yllo + self.sizes.comp_slot_size[1] / 2,
                         _shorten_str(n, self.max_slot_label_length),
                         ha="left",
                         va="center",
@@ -405,8 +462,8 @@ class GraphDiagram:
                     )
 
         axes.text(
-            xll + self._component_size[0] / 2,
-            yll + self._component_size[1] / 2,
+            xll + self.sizes.component_size[0] / 2,
+            yll + self.sizes.component_size[1] / 2,
             _shorten_str(name.replace("Component", "Co"), self.max_label_length),
             ha="center",
             va="center",
@@ -421,19 +478,19 @@ class GraphDiagram:
 
         rect = patches.FancyBboxPatch(
             (xll, yll),
-            *self._adapter_size,
+            *self.sizes.adapter_size,
             boxstyle=f"round, pad=0, rounding_size={self.corner_radius}",
             linewidth=1,
             edgecolor="k",
-            facecolor=self.selected_adapter_color
+            facecolor=self.colors.selected_adapter_color
             if self.selected_cell == comp
-            else color or self.adapter_color,
+            else color or self.colors.adapter_color,
         )
 
         xlli, ylli = self._input_pos(comp, 0)
         inp = patches.Rectangle(
             (xll + xlli, yll + ylli),
-            *self.adap_slot_size,
+            *self.sizes.adap_slot_size,
             linewidth=1,
             edgecolor="k",
             facecolor="lightgrey",
@@ -442,7 +499,7 @@ class GraphDiagram:
         xllo, yllo = self._output_pos(comp, 0)
         out = patches.Rectangle(
             (xll + xllo, yll + yllo),
-            *self.adap_slot_size,
+            *self.sizes.adap_slot_size,
             linewidth=1,
             edgecolor="k",
             facecolor="white",
@@ -453,8 +510,8 @@ class GraphDiagram:
         axes.add_patch(out)
 
         axes.text(
-            xll + self._adapter_size[0] / 2,
-            yll + self._adapter_size[1] / 2,
+            xll + self.sizes.adapter_size[0] / 2,
+            yll + self.sizes.adapter_size[1] / 2,
             _shorten_str(name.replace("Adapter", "Ad."), self.max_label_length),
             ha="center",
             va="center",
@@ -464,43 +521,43 @@ class GraphDiagram:
     def _comp_pos(self, comp_or_ada, pos):
         if isinstance(comp_or_ada, IComponent):
             return (
-                pos[0] * self._grid_size[0] + self.component_offset[0],
-                pos[1] * self._grid_size[1] + self.component_offset[1],
+                pos[0] * self.sizes.grid_size[0] + self.component_offset[0],
+                pos[1] * self.sizes.grid_size[1] + self.component_offset[1],
             )
 
         return (
-            pos[0] * self._grid_size[0] + self.adapter_offset[0],
-            pos[1] * self._grid_size[1] + self.adapter_offset[1],
+            pos[0] * self.sizes.grid_size[0] + self.adapter_offset[0],
+            pos[1] * self.sizes.grid_size[1] + self.adapter_offset[1],
         )
 
     def _input_pos(self, comp_or_ada, idx):
         if isinstance(comp_or_ada, IComponent):
             cnt = len(comp_or_ada.inputs)
             inv_idx = cnt - 1 - idx
-            in_sp = self._component_size[1] / cnt
+            in_sp = self.sizes.component_size[1] / cnt
             return (
-                -self.comp_slot_size[0],
-                in_sp / 2 + in_sp * inv_idx - self.comp_slot_size[1] / 2,
+                -self.sizes.comp_slot_size[0],
+                in_sp / 2 + in_sp * inv_idx - self.sizes.comp_slot_size[1] / 2,
             )
 
         return (
-            -self.adap_slot_size[0],
-            self._adapter_size[1] / 2 - self.adap_slot_size[1] / 2,
+            -self.sizes.adap_slot_size[0],
+            self.sizes.adapter_size[1] / 2 - self.sizes.adap_slot_size[1] / 2,
         )
 
     def _output_pos(self, comp_or_ada, idx):
         if isinstance(comp_or_ada, IComponent):
             cnt = len(comp_or_ada.outputs)
             inv_idx = cnt - 1 - idx
-            out_sp = self._component_size[1] / cnt
+            out_sp = self.sizes.component_size[1] / cnt
             return (
-                self._component_size[0],
-                out_sp / 2 + out_sp * inv_idx - self.comp_slot_size[1] / 2,
+                self.sizes.component_size[0],
+                out_sp / 2 + out_sp * inv_idx - self.sizes.comp_slot_size[1] / 2,
             )
 
         return (
-            self._adapter_size[0],
-            self._adapter_size[1] / 2 - self.adap_slot_size[1] / 2,
+            self.sizes.adapter_size[0],
+            self.sizes.adapter_size[1] / 2 - self.sizes.adap_slot_size[1] / 2,
         )
 
 
@@ -545,10 +602,14 @@ def _optimize_positions(
     nodes = list(pos.keys())
     nodes.sort(key=lambda co: co.__class__.__name__)
 
-    return _do_optimize_positions(graph, nodes, simple, show_adapters, pos, grid, size, max_iterations, rng)
+    return _do_optimize_positions(
+        graph, nodes, simple, show_adapters, pos, grid, size, max_iterations, rng
+    )
 
 
-def _do_optimize_positions(graph, nodes, simple, show_adapters, pos, grid, size, max_iterations, rng):
+def _do_optimize_positions(
+    graph, nodes, simple, show_adapters, pos, grid, size, max_iterations, rng
+):
 
     print("Optimizing graph layout...")
 

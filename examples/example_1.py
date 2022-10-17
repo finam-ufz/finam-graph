@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta
 
 import numpy as np
-
+from finam import Composition, Info, NoGrid, UniformGrid
 from finam.adapters import base, time
-from finam import Composition, UniformGrid, Info, NoGrid
-from finam.modules.generators import CallbackGenerator
 from finam.modules.debug import DebugConsumer
+from finam.modules.generators import CallbackGenerator
 
 from finam_graph import GraphDiagram
 
@@ -70,5 +69,5 @@ if __name__ == "__main__":
         consumer2: (2, 1),
         consumer3: (2, 3),
     }
-    GraphDiagram().draw(composition, pos, save_path="examples/graph.svg")
+    GraphDiagram().draw(composition, positions=pos, save_path="examples/graph.svg")
     """
