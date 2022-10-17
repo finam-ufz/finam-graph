@@ -1,40 +1,39 @@
 import unittest
-import numpy as np
 from datetime import datetime, timedelta
 
+import numpy as np
+from finam import (ATimeComponent, ComponentStatus, Composition, Info, Input,
+                   NoGrid, UniformGrid)
 from finam.adapters import base, time
-from finam.core.interfaces import ComponentStatus
-from finam.core.schedule import Composition
-from finam.core.sdk import ATimeComponent, Input
-from finam.data.grid import Grid, GridSpec
-from finam.modules.generators import CallbackGenerator
 from finam.modules.callback import CallbackComponent
+from finam.modules.debug import DebugConsumer
+from finam.modules.generators import CallbackGenerator
 
 from finam_graph.graph import Graph
 
 
-def generate_grid():
-    return Grid(GridSpec(10, 5), data=np.random.random(50))
+def generate_grid(grid):
+    return np.random.random(grid.data_size).reshape(
+        shape=grid.data_shape, order=grid.order
+    )
 
 
 class TestCompAnalyzer(unittest.TestCase):
     def test_analyze(self):
+        grid = UniformGrid((10, 5))
+
         source = CallbackGenerator(
-            callbacks={"Grid": lambda t: generate_grid()},
+            callbacks={"Grid": (lambda t: generate_grid(), Info(grid=grid))},
             start=datetime(2000, 1, 1),
             step=timedelta(days=7),
         )
-        consumer = CallbackComponent(
-            inputs=["Input"],
-            outputs=[],
-            callback=lambda data, t: {},
+        consumer = DebugConsumer(
+            inputs={"Input": Info(grid=NoGrid())},
             start=datetime(2000, 1, 1),
             step=timedelta(days=1),
         )
-        consumer2 = CallbackComponent(
-            inputs=["Input"],
-            outputs=[],
-            callback=lambda data, t: {},
+        consumer2 = DebugConsumer(
+            inputs={"Input": Info(grid=NoGrid())},
             start=datetime(2000, 1, 1),
             step=timedelta(days=1),
         )

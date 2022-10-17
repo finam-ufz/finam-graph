@@ -1,5 +1,5 @@
-from finam.core.interfaces import IInput, IAdapter, IOutput
-from finam.core.schedule import Composition
+from finam import Composition
+from finam.core.interfaces import IAdapter, IInput, IOutput
 
 
 class Graph:

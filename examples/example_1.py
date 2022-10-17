@@ -1,6 +1,6 @@
-import numpy as np
 from datetime import datetime, timedelta
 
+import numpy as np
 from finam.adapters import base, time
 from finam.core.interfaces import ComponentStatus
 from finam.core.schedule import Composition

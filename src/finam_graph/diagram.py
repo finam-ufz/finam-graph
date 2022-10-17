@@ -1,7 +1,7 @@
 import math
-import numpy as np
 
 import matplotlib.pyplot as plt
+import numpy as np
 from finam.core.interfaces import IComponent, ITimeComponent
 from matplotlib import patches
 from matplotlib.axes import Axes
