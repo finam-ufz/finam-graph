@@ -3,7 +3,7 @@ import math
 
 import matplotlib.pyplot as plt
 import numpy as np
-from finam.core.interfaces import IComponent, ITimeComponent
+from finam.interfaces import IComponent, ITimeComponent
 from matplotlib import patches
 from matplotlib.axes import Axes
 from matplotlib.backend_bases import MouseButton
