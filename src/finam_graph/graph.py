@@ -1,6 +1,6 @@
 """Helpers for graph analysis"""
 from finam import Composition
-from finam.core.interfaces import IAdapter, IInput, IOutput
+from finam.interfaces import IAdapter, IInput, IOutput
 
 
 class Graph:
