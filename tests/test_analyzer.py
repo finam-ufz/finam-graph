@@ -1,11 +1,8 @@
 import unittest
 from datetime import datetime, timedelta
 
+import finam as fm
 import numpy as np
-from finam import Composition, Info, NoGrid, UniformGrid
-from finam.adapters import base, time
-from finam.modules.debug import DebugConsumer
-from finam.modules.generators import CallbackGenerator
 
 from finam_graph.graph import Graph
 
@@ -18,30 +15,30 @@ def generate_grid(grid):
 
 class TestCompAnalyzer(unittest.TestCase):
     def test_analyze(self):
-        grid = UniformGrid((10, 5))
+        grid = fm.UniformGrid((10, 5))
 
-        source = CallbackGenerator(
+        source = fm.modules.CallbackGenerator(
             callbacks={
-                "Grid": (lambda t: generate_grid(grid), Info(time=None, grid=grid))
+                "Grid": (lambda t: generate_grid(grid), fm.Info(time=None, grid=grid))
             },
             start=datetime(2000, 1, 1),
             step=timedelta(days=7),
         )
-        consumer = DebugConsumer(
-            inputs={"Input": Info(time=None, grid=NoGrid())},
+        consumer = fm.modules.DebugConsumer(
+            inputs={"Input": fm.Info(time=None, grid=fm.NoGrid())},
             start=datetime(2000, 1, 1),
             step=timedelta(days=1),
         )
-        consumer2 = DebugConsumer(
-            inputs={"Input": Info(time=None, grid=NoGrid())},
+        consumer2 = fm.modules.DebugConsumer(
+            inputs={"Input": fm.Info(time=None, grid=fm.NoGrid())},
             start=datetime(2000, 1, 1),
             step=timedelta(days=1),
         )
 
-        grid_to_val = base.GridToValue(np.mean)
-        lin_interp = time.LinearInterpolation()
+        grid_to_val = fm.adapters.GridToValue(np.mean)
+        lin_interp = fm.adapters.LinearTime()
 
-        composition = Composition([source, consumer, consumer2])
+        composition = fm.Composition([source, consumer, consumer2])
         composition.initialize()
 
         _ = (
