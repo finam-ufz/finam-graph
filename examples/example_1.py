@@ -20,24 +20,27 @@ if __name__ == "__main__":
 
     source = CallbackGenerator(
         callbacks={
-            "Grid": (lambda t: generate_grid(grid), Info(grid=grid)),
-            "Scalar": (lambda t: np.random.random(1)[0], Info(grid=NoGrid())),
+            "Grid": (lambda t: generate_grid(grid), Info(time=None, grid=grid)),
+            "Scalar": (
+                lambda t: np.random.random(1)[0],
+                Info(time=None, grid=NoGrid()),
+            ),
         },
         start=datetime(2000, 1, 1),
         step=timedelta(days=7),
     )
     consumer = DebugConsumer(
-        inputs={"Input": Info(grid=NoGrid())},
+        inputs={"Input": Info(time=None, grid=NoGrid())},
         start=datetime(2000, 1, 1),
         step=timedelta(days=1),
     )
     consumer2 = DebugConsumer(
-        inputs={"Input": Info(grid=NoGrid())},
+        inputs={"Input": Info(time=None, grid=NoGrid())},
         start=datetime(2000, 1, 1),
         step=timedelta(days=1),
     )
     consumer3 = DebugConsumer(
-        inputs={"Input": Info(grid=NoGrid())},
+        inputs={"Input": Info(time=None, grid=NoGrid())},
         start=datetime(2000, 1, 1),
         step=timedelta(days=1),
     )

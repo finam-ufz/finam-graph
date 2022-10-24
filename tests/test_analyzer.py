@@ -21,17 +21,19 @@ class TestCompAnalyzer(unittest.TestCase):
         grid = UniformGrid((10, 5))
 
         source = CallbackGenerator(
-            callbacks={"Grid": (lambda t: generate_grid(grid), Info(grid=grid))},
+            callbacks={
+                "Grid": (lambda t: generate_grid(grid), Info(time=None, grid=grid))
+            },
             start=datetime(2000, 1, 1),
             step=timedelta(days=7),
         )
         consumer = DebugConsumer(
-            inputs={"Input": Info(grid=NoGrid())},
+            inputs={"Input": Info(time=None, grid=NoGrid())},
             start=datetime(2000, 1, 1),
             step=timedelta(days=1),
         )
         consumer2 = DebugConsumer(
-            inputs={"Input": Info(grid=NoGrid())},
+            inputs={"Input": Info(time=None, grid=NoGrid())},
             start=datetime(2000, 1, 1),
             step=timedelta(days=1),
         )
