@@ -6,6 +6,9 @@ FINAM Graph
 
 A tool for visualizing `FINAM <https://finam.pages.ufz.de/>`_ model linkage setups.
 
+.. image:: ./images/graph.svg
+    :width: 100%
+
 Quickstart
 ----------
 

@@ -65,7 +65,7 @@ exclude_patterns = []
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "pydata_sphinx_theme"
-html_static_path = ["_static"]
+html_static_path = ["_static", "images"]
 html_css_files = [
     "css/custom.css",
 ]
@@ -101,8 +101,8 @@ html_theme_options = {
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "Python": ("https://docs.python.org/", None),
-    "NumPy": ("https://docs.scipy.org/doc/numpy/", None),
+    "Python": ("https://docs.python.org/3/", None),
+    "NumPy": ("https://numpy.org/doc/stable/", None),
     "matplotlib": ("https://matplotlib.org/stable/", None),
     "finam": ("https://finam.pages.ufz.de/finam/", None),
 }
