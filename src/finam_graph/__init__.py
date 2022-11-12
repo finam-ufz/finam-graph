@@ -22,12 +22,12 @@ Graph data
 
 .. autosummary::
    :toctree: generated
-   :caption: Graph diagram
+   :caption: Graph data
 
     graph.Graph
 """
 from . import graph
-from .diagram import GraphDiagram, GraphColors, GraphSizes
+from .diagram import GraphColors, GraphDiagram, GraphSizes
 
 try:
     from ._version import __version__
