@@ -81,7 +81,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "Source code",
-            "url": "https://git.ufz.de/FINAM/finam-regrid",
+            "url": "https://git.ufz.de/FINAM/finam-graph",
             "icon": "fa-brands fa-square-gitlab",
             "type": "fontawesome",
             "attributes": {"target": "_blank"},
