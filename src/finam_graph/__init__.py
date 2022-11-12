@@ -1,5 +1,39 @@
-"""A tool to visualize FINAM compositions"""
-from . import graph
-from .diagram import GraphDiagram
+"""
+A tool to visualize FINAM compositions
 
-__all__ = ["GraphDiagram", "graph"]
+.. toctree::
+   :hidden:
+
+   self
+
+Graph diagram
+=============
+
+.. autosummary::
+   :toctree: generated
+   :caption: Graph diagram
+
+    GraphDiagram
+    GraphColors
+    GraphSizes
+
+Graph data
+==========
+
+.. autosummary::
+   :toctree: generated
+   :caption: Graph diagram
+
+    graph.Graph
+"""
+from . import graph
+from .diagram import GraphDiagram, GraphColors, GraphSizes
+
+try:
+    from ._version import __version__
+except ModuleNotFoundError:  # pragma: no cover
+    # package is not installed
+    __version__ = "0.0.0.dev0"
+
+
+__all__ = ["GraphDiagram", "GraphColors", "GraphSizes", "graph"]
