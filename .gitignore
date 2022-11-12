@@ -62,7 +62,8 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+docs/build/
+docs/source/api/generated
 docs/output.txt
 
 # PyBuilder
@@ -118,9 +119,6 @@ src/finam_graph/_version.py
 docs/source/examples/
 docs/source/generated/
 
-/docs/build/
-/docs/finam_netcdf.*
-/docs/modules.rst
 *.csv
 
 *.DS_Store

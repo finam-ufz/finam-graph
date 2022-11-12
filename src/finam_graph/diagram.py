@@ -59,13 +59,13 @@ class GraphColors:
     Parameters
     ----------
     comp_color : str
-        Component color
+        :class:`finam.Component` color
     time_comp_color : str
-        TimeComponent color
+        :class:`finam.TimeComponent` color
     selected_comp_color : str
         Component color for selection
     adapter_color : str
-        Adapter color
+        :class:`finam.Adapter` color
     selected_adapter_color : str
         Adapter color for selection
     """
@@ -86,14 +86,27 @@ class GraphColors:
 
 
 class GraphDiagram:
-    """Diagram drawer
+    """Diagram drawer.
+
+    Examples
+    --------
+
+    .. code-block:: Python
+
+        composition = Composition([comp_a, comp_b])
+        composition.initialize()
+
+        comp_a.outputs["Out"] >> comp_b.inputs["In"]
+
+        diagram = GraphDiagram()
+        diagram.draw(composition, save_path="graph.svg")
 
     Parameters
     ----------
     sizes : GraphSizes
-        Graph sizing properties
+        Graph sizing properties object :class:`.GraphSizes`.
     colors : GraphColors
-        Graph coloring properties
+        Graph coloring properties object :class:`.GraphColors`.
     corner_radius : int
         Radius for rounded corners
     max_label_length : int
@@ -145,24 +158,24 @@ class GraphDiagram:
         Parameters
         ----------
         composition : Composition
-            The composition to draw a graph diagram for
-        simple : bool
-            Whether to draw a simplified version without slots
-        show_adapters : bool
-            Whether to show adapters
-        positions : dict
-            Dictionary of grid cell position tuples per component/adapter
-        colors : dict
-            Dictionary of component/adapter color overrides
-        show : bool
-            Whether to show the diagram
-        block : bool
-            Should the diagram be shown in blocking mode?
-        save_path : pathlike
+            The :class:`finam.Composition` to draw a graph diagram for
+        simple : bool, optional
+            Whether to draw a simplified version without slots. Default: False
+        show_adapters : bool, optional
+            Whether to show adapters. Default: True
+        positions : dict, optional
+            Dictionary of grid cell position tuples per component/adapter. Default: None (optimized)
+        colors : dict, optional
+            Dictionary of component/adapter color overrides. Default: None
+        show : bool, optional
+            Whether to show the diagram. Default: True
+        block : bool, optional
+            Should the diagram be shown in blocking mode? Default: True
+        save_path : pathlike, optional
             Path to save image file. Default: None (i.e. don't save)
-        max_iterations : int
+        max_iterations : int, optional
             Maximum iterations for optimizing node placement. Default: 25000
-        seed : int
+        seed : int, optional
             Random seed for the optimizer. Default: None
         """
         colors = colors or {}
