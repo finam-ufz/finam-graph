@@ -290,9 +290,9 @@ class GraphDiagram:
         )
         return x_lim, y_lim
 
-    def _draw_grid(self, lower, upper, axes: Axes):
-        for i in range(lower[0] - 1, upper[0] + 2):
-            for j in range(lower[1] - 1, upper[1] + 2):
+    def _draw_grid(self, x_bounds, y_bounds, axes: Axes):
+        for i in range(x_bounds[0] - 1, x_bounds[1] + 2):
+            for j in range(y_bounds[0] - 1, y_bounds[1] + 2):
                 rect = patches.Rectangle(
                     (i * self.sizes.grid_size[0], j * self.sizes.grid_size[1]),
                     *self.sizes.grid_size,
