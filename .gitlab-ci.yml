@@ -2,6 +2,8 @@ image: python
 
 stages:
   - test
+  - build
+  - deploy
 
 check:
   stage: test
@@ -24,3 +26,33 @@ test:
       coverage_report:
         coverage_format: cobertura
         path: cov.xml
+    paths:
+      - cov
+
+doctest:
+  stage: test
+  script:
+    - pip3 install --editable .[doc]
+    # doctest does not detect tests in code files during the first run.
+    # add a dummy build to generate .rst files before the actual tests
+    - sphinx-build -b dummy docs/source docs/build
+    - sphinx-build -b doctest docs/source docs/build
+
+documentation:
+  stage: build
+  script:
+    - pip3 install --editable .[doc]
+    - sphinx-build docs/source docs/build
+    - mv docs/build public/
+  artifacts:
+    paths:
+      - public
+
+pages:
+  stage: deploy
+  script: "true"
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
