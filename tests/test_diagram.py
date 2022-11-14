@@ -69,7 +69,10 @@ class TestDiagram(unittest.TestCase):
             file_path = os.path.join(tmp, "test.svg")
             GraphDiagram().draw(
                 composition,
-                labels={source: "Source"},
+                labels={
+                    source: "Source",
+                    grid_to_val2: "G2V",
+                },
                 block=False,
                 show=False,
                 seed=5,
