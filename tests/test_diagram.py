@@ -68,5 +68,13 @@ class TestDiagram(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             file_path = os.path.join(tmp, "test.svg")
             GraphDiagram().draw(
-                composition, block=False, show=False, seed=5, save_path=file_path
+                composition,
+                labels={
+                    source: "Source",
+                    grid_to_val2: "G2V",
+                },
+                block=False,
+                show=False,
+                seed=5,
+                save_path=file_path,
             )

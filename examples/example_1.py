@@ -56,7 +56,16 @@ if __name__ == "__main__":
     _ = source.outputs["Scalar"] >> consumer3.inputs["Input"]
 
     # With automatic placement
-    GraphDiagram().draw(composition, seed=5, save_path="examples/graph.svg")
+    GraphDiagram().draw(
+        composition,
+        labels={
+            source: "Source",
+            grid_to_val: "G2V",
+            grid_to_val2: "G2V",
+        },
+        seed=5,
+        # save_path="examples/graph.svg"
+    )
 
     # With manual placement
     """
