@@ -6,16 +6,16 @@ from finam.interfaces import IAdapter, IInput, IOutput
 class Graph:
     """Container for graph data"""
 
-    def __init__(self, comp: Composition):
-        self.components, self.adapters, self.edges, self.direct_edges = _get_graph(comp)
+    def __init__(self, comp: Composition, excluded: set):
+        self.components, self.adapters, self.edges, self.direct_edges = _get_graph(comp, excluded)
 
         self.simple_edges = set()
         for edge in self.direct_edges:
             self.simple_edges.add((edge.source, edge.target))
 
 
-def _get_graph(composition):
-    components, adapters, direct_edges = _get_graph_nodes(composition)
+def _get_graph(composition, excluded):
+    components, adapters, direct_edges = _get_graph_nodes(composition, excluded)
 
     edges = _get_component_edges(components)
     edges = edges.union(_get_adapter_edges(adapters))
@@ -60,17 +60,23 @@ def _get_adapter_edges(adapters):
     return edges
 
 
-def _get_graph_nodes(composition):
-    components = set(composition.modules)
+def _get_graph_nodes(composition, excluded):
+    components = set()
     adapters = set()
     direct_edges = set()
 
-    for comp in components:
+    for comp in composition.modules:
+        if comp in excluded:
+            continue
+
+        components.add(comp)
         for i, (n, inp) in enumerate(comp.inputs.items()):
             out, depth = _trace_input(inp, adapters)
             if out is None:
                 continue
-            for comp2 in components:
+            for comp2 in composition.modules:
+                if comp2 in excluded:
+                    continue
                 for ii, (nm, src) in enumerate(comp2.outputs.items()):
                     if out == src:
                         direct_edges.add(Edge(comp2, nm, ii, comp, n, i, depth))

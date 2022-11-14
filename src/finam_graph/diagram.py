@@ -147,6 +147,7 @@ class GraphDiagram:
         positions=None,
         labels=None,
         colors=None,
+        excluded=None,
         show=True,
         block=True,
         save_path=None,
@@ -170,6 +171,8 @@ class GraphDiagram:
             Dictionary of component/adapter label overrides. Default: None
         colors : dict, optional
             Dictionary of component/adapter color overrides. Default: None
+        excluded : list, optional
+            List of excluded components. Default: None
         show : bool, optional
             Whether to show the diagram. Default: True
         block : bool, optional
@@ -183,6 +186,7 @@ class GraphDiagram:
         """
         colors = colors or {}
         labels = labels or {}
+        excluded = set(excluded) if excluded is not None else set()
 
         if simple:
             show_adapters = False
@@ -192,7 +196,7 @@ class GraphDiagram:
             if seed is None
             else np.random.default_rng(seed=seed)
         )
-        graph = Graph(composition)
+        graph = Graph(composition, excluded)
 
         if positions is None:
             positions = _optimize_positions(
