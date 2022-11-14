@@ -145,6 +145,7 @@ class GraphDiagram:
         simple=False,
         show_adapters=True,
         positions=None,
+        labels=None,
         colors=None,
         show=True,
         block=True,
@@ -165,6 +166,8 @@ class GraphDiagram:
             Whether to show adapters. Default: True
         positions : dict, optional
             Dictionary of grid cell position tuples per component/adapter. Default: None (optimized)
+        labels : dict, optional
+            Dictionary of component/adapter label overrides. Default: None
         colors : dict, optional
             Dictionary of component/adapter color overrides. Default: None
         show : bool, optional
@@ -179,6 +182,7 @@ class GraphDiagram:
             Random seed for the optimizer. Default: None
         """
         colors = colors or {}
+        labels = labels or {}
 
         if simple:
             show_adapters = False
@@ -207,7 +211,7 @@ class GraphDiagram:
 
         figure.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
-        self._repaint(graph, positions, colors, simple, show_adapters, ax)
+        self._repaint(graph, positions, labels, colors, simple, show_adapters, ax)
 
         if save_path is not None:
             plt.savefig(save_path)
@@ -220,7 +224,9 @@ class GraphDiagram:
 
                 if event.button == MouseButton.RIGHT:
                     self.selected_cell = None
-                    self._repaint(graph, positions, colors, simple, show_adapters, ax)
+                    self._repaint(
+                        graph, positions, labels, colors, simple, show_adapters, ax
+                    )
                     return
 
                 xdata, ydata = event.xdata, event.ydata
@@ -233,18 +239,28 @@ class GraphDiagram:
                         if v == cell:
                             self.selected_cell = k
                             self._repaint(
-                                graph, positions, colors, simple, show_adapters, ax
+                                graph,
+                                positions,
+                                labels,
+                                colors,
+                                simple,
+                                show_adapters,
+                                ax,
                             )
                             break
                 else:
                     positions[self.selected_cell] = cell
                     self.selected_cell = None
-                    self._repaint(graph, positions, colors, simple, show_adapters, ax)
+                    self._repaint(
+                        graph, positions, labels, colors, simple, show_adapters, ax
+                    )
 
             def on_press(event):
                 if event.key == " ":
                     self.show_grid = not self.show_grid
-                    self._repaint(graph, positions, colors, simple, show_adapters, ax)
+                    self._repaint(
+                        graph, positions, labels, colors, simple, show_adapters, ax
+                    )
 
             def on_close(_event):
                 plt.close(figure)
@@ -258,7 +274,14 @@ class GraphDiagram:
             plt.show(block=block)
 
     def _repaint(
-        self, graph, positions, colors, simple: bool, show_adapters: bool, axes: Axes
+        self,
+        graph,
+        positions,
+        labels,
+        colors,
+        simple: bool,
+        show_adapters: bool,
+        axes: Axes,
     ):
         while bool(axes.patches):
             axes.patches[0].remove()
@@ -277,12 +300,14 @@ class GraphDiagram:
         comp_patches = {}
         for comp in graph.components:
             comp_patches[comp] = self._draw_component(
-                comp, positions[comp], colors.get(comp), simple, axes
+                comp, positions[comp], labels.get(comp), colors.get(comp), simple, axes
             )
 
         if show_adapters:
             for ad in graph.adapters:
-                self._draw_adapter(ad, positions[ad], colors.get(ad), axes)
+                self._draw_adapter(
+                    ad, positions[ad], labels.get(ad), colors.get(ad), axes
+                )
 
         if simple:
             self._draw_edges_simple(graph.simple_edges, positions, comp_patches, axes)
@@ -416,8 +441,8 @@ class GraphDiagram:
                 size=6,
             )
 
-    def _draw_component(self, comp, position, color, simple, axes: Axes):
-        name = comp.__class__.__name__
+    def _draw_component(self, comp, position, label, color, simple, axes: Axes):
+        name = label or comp.name
         xll, yll = self._comp_pos(comp, position)
 
         rect = patches.FancyBboxPatch(
@@ -489,8 +514,8 @@ class GraphDiagram:
 
         return rect
 
-    def _draw_adapter(self, comp, position, color, axes: Axes):
-        name = comp.__class__.__name__
+    def _draw_adapter(self, comp, position, label, color, axes: Axes):
+        name = label or comp.name
         xll, yll = self._comp_pos(comp, position)
 
         rect = patches.FancyBboxPatch(
