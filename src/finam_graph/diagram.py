@@ -173,7 +173,7 @@ class GraphDiagram:
         positions : dict, optional
             Dictionary of grid cell position tuples per component/adapter. Default: None (optimized)
         labels : dict, optional
-            Dictionary of component/adapter label overrides. Default: None
+            Dictionary of label overrides for components, adapters and input/output slots. Default: None
         colors : dict, optional
             Dictionary of component/adapter color overrides. Default: None
         show : bool, optional
@@ -321,7 +321,13 @@ class GraphDiagram:
         comp_patches = {}
         for comp in graph.components:
             comp_patches[comp] = self._draw_component(
-                comp, positions[comp], labels.get(comp), colors.get(comp), simple, axes
+                comp,
+                positions[comp],
+                labels.get(comp),
+                colors.get(comp),
+                simple,
+                labels,
+                axes,
             )
 
         if show_adapters:
@@ -462,7 +468,7 @@ class GraphDiagram:
                 size=6,
             )
 
-    def _draw_component(self, comp, position, label, color, simple, axes: Axes):
+    def _draw_component(self, comp, position, label, color, simple, labels, axes: Axes):
         name = label or comp.name
         xll, yll = self._comp_pos(comp, position)
 
@@ -485,7 +491,8 @@ class GraphDiagram:
 
         if not simple:
             if len(comp.inputs) > 0:
-                for i, n in enumerate(comp.inputs.keys()):
+                for i, (n, inp) in enumerate(comp.inputs.items()):
+                    in_name = labels.get(inp, n)
                     xlli, ylli = self._input_pos(comp, i)
                     inp = patches.Rectangle(
                         (xll + xlli, yll + ylli),
@@ -498,14 +505,15 @@ class GraphDiagram:
                     axes.text(
                         xll + xlli + 2,
                         yll + ylli + self.sizes.comp_slot_size[1] / 2,
-                        _shorten_str(n, self.max_slot_label_length),
+                        _shorten_str(in_name, self.max_slot_label_length),
                         ha="left",
                         va="center",
                         size=7,
                     )
 
             if len(comp.outputs) > 0:
-                for i, n in enumerate(comp.outputs.keys()):
+                for i, (n, out) in enumerate(comp.outputs.items()):
+                    out_name = labels.get(out, n)
                     xllo, yllo = self._output_pos(comp, i)
                     inp = patches.Rectangle(
                         (xll + xllo, yll + yllo),
@@ -518,7 +526,7 @@ class GraphDiagram:
                     axes.text(
                         xll + xllo + 2,
                         yll + yllo + self.sizes.comp_slot_size[1] / 2,
-                        _shorten_str(n, self.max_slot_label_length),
+                        _shorten_str(out_name, self.max_slot_label_length),
                         ha="left",
                         va="center",
                         size=7,
