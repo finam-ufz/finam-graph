@@ -72,6 +72,8 @@ class TestDiagram(unittest.TestCase):
                 excluded={consumer2},
                 labels={
                     source: "Source",
+                    source.outputs["Grid"]: "G",
+                    consumer2.inputs["Input"]: "V",
                     grid_to_val2: "G2V",
                 },
                 block=False,
