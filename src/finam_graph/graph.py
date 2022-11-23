@@ -90,13 +90,22 @@ def _get_graph_nodes(composition, excluded):
     return components, adapters, direct_edges
 
 
-def _map_outputs(components):
+def _map_inputs(components):
     input_map = {}
     for comp in components:
         for i, (_n, inp) in enumerate(comp.inputs.items()):
             input_map[inp] = comp, i
 
     return input_map
+
+
+def _map_outputs(components):
+    output_map = {}
+    for comp in components:
+        for i, (_n, out) in enumerate(comp.outputs.items()):
+            output_map[out] = comp, i
+
+    return output_map
 
 
 def _trace_input(inp: IInput, out_adapters: set, depth=0):

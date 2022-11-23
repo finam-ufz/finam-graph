@@ -142,9 +142,8 @@ class GraphDiagram:
     def draw(
         self,
         composition,
+        details=2,
         excluded=None,
-        simple=False,
-        show_adapters=True,
         positions=None,
         labels=None,
         colors=None,
@@ -163,10 +162,14 @@ class GraphDiagram:
             The :class:`finam.Composition` to draw a graph diagram for
         excluded : list or set, optional
             List of excluded components. Default: None
-        simple : bool, optional
-            Whether to draw a simplified version without slots. Default: False
-        show_adapters : bool, optional
-            Whether to show adapters. Default: True
+        details : int, optional
+            Level of details of the graph plot.
+
+            * 0: Simple graph without slots and adapters
+            * 1: Detailed graph, with collapsed adapters
+            * 2: Full detailed graph, with adapters
+
+            Defaults to 2.
         positions : dict, optional
             Dictionary of grid cell position tuples per component/adapter. Default: None (optimized)
         labels : dict, optional
@@ -188,8 +191,8 @@ class GraphDiagram:
         labels = labels or {}
         excluded = set(excluded) if excluded is not None else set()
 
-        if simple:
-            show_adapters = False
+        show_adapters = details > 1
+        simple = details < 1
 
         rng = (
             np.random.default_rng()
