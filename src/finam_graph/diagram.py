@@ -142,8 +142,8 @@ class GraphDiagram:
     def draw(
         self,
         composition,
-        simple=False,
-        show_adapters=True,
+        details=2,
+        excluded=None,
         positions=None,
         labels=None,
         colors=None,
@@ -160,10 +160,16 @@ class GraphDiagram:
         ----------
         composition : Composition
             The :class:`finam.Composition` to draw a graph diagram for
-        simple : bool, optional
-            Whether to draw a simplified version without slots. Default: False
-        show_adapters : bool, optional
-            Whether to show adapters. Default: True
+        excluded : list or set, optional
+            List of excluded components. Default: None
+        details : int, optional
+            Level of details of the graph plot.
+
+            * 0: Simple graph without slots and adapters
+            * 1: Detailed graph, with collapsed adapters
+            * 2: Full detailed graph, with adapters
+
+            Defaults to 2.
         positions : dict, optional
             Dictionary of grid cell position tuples per component/adapter. Default: None (optimized)
         labels : dict, optional
@@ -183,16 +189,17 @@ class GraphDiagram:
         """
         colors = colors or {}
         labels = labels or {}
+        excluded = set(excluded) if excluded is not None else set()
 
-        if simple:
-            show_adapters = False
+        show_adapters = details > 1
+        simple = details < 1
 
         rng = (
             np.random.default_rng()
             if seed is None
             else np.random.default_rng(seed=seed)
         )
-        graph = Graph(composition)
+        graph = Graph(composition, excluded)
 
         if positions is None:
             positions = _optimize_positions(
@@ -217,61 +224,75 @@ class GraphDiagram:
             plt.savefig(save_path)
 
         if show:
+            self._show(
+                graph,
+                positions,
+                labels,
+                colors,
+                simple,
+                show_adapters,
+                ax,
+                figure,
+                block,
+            )
 
-            def onclick(event):
-                if event.xdata is None:
-                    return
+    def _show(
+        self, graph, positions, labels, colors, simple, show_adapters, ax, figure, block
+    ):
+        def onclick(event):
+            if event.xdata is None:
+                return
 
-                if event.button == MouseButton.RIGHT:
-                    self.selected_cell = None
-                    self._repaint(
-                        graph, positions, labels, colors, simple, show_adapters, ax
-                    )
-                    return
+            if event.button == MouseButton.RIGHT:
+                self.selected_cell = None
+                self._repaint(
+                    graph, positions, labels, colors, simple, show_adapters, ax
+                )
+                return
 
-                xdata, ydata = event.xdata, event.ydata
-                cell = int(math.floor(xdata / self.sizes.grid_size[0])), int(
-                    math.floor(ydata / self.sizes.grid_size[1])
+            xdata, ydata = event.xdata, event.ydata
+            cell = int(math.floor(xdata / self.sizes.grid_size[0])), int(
+                math.floor(ydata / self.sizes.grid_size[1])
+            )
+
+            if self.selected_cell is None:
+                for k, v in positions.items():
+                    if v == cell:
+                        self.selected_cell = k
+                        self._repaint(
+                            graph,
+                            positions,
+                            labels,
+                            colors,
+                            simple,
+                            show_adapters,
+                            ax,
+                        )
+                        break
+            else:
+                positions[self.selected_cell] = cell
+                self.selected_cell = None
+                self._repaint(
+                    graph, positions, labels, colors, simple, show_adapters, ax
                 )
 
-                if self.selected_cell is None:
-                    for k, v in positions.items():
-                        if v == cell:
-                            self.selected_cell = k
-                            self._repaint(
-                                graph,
-                                positions,
-                                labels,
-                                colors,
-                                simple,
-                                show_adapters,
-                                ax,
-                            )
-                            break
-                else:
-                    positions[self.selected_cell] = cell
-                    self.selected_cell = None
-                    self._repaint(
-                        graph, positions, labels, colors, simple, show_adapters, ax
-                    )
+        def on_press(event):
+            if event.key == " ":
+                self.show_grid = not self.show_grid
+                self._repaint(
+                    graph, positions, labels, colors, simple, show_adapters, ax
+                )
 
-            def on_press(event):
-                if event.key == " ":
-                    self.show_grid = not self.show_grid
-                    self._repaint(
-                        graph, positions, labels, colors, simple, show_adapters, ax
-                    )
+        def on_close(_event):
+            plt.close(figure)
+            plt.ioff()
 
-            def on_close(_event):
-                plt.close(figure)
-                plt.ioff()
+        _cid = figure.canvas.mpl_connect("button_press_event", onclick)
+        _cid = figure.canvas.mpl_connect("key_press_event", on_press)
+        _cid = figure.canvas.mpl_connect("close_event", on_close)
 
-            _cid = figure.canvas.mpl_connect("button_press_event", onclick)
-            _cid = figure.canvas.mpl_connect("key_press_event", on_press)
-            _cid = figure.canvas.mpl_connect("close_event", on_close)
-
-            plt.ion()
-            plt.show(block=block)
+        plt.ion()
+        plt.show(block=block)
 
     def _repaint(
         self,

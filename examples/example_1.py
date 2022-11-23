@@ -58,6 +58,7 @@ if __name__ == "__main__":
     # With automatic placement
     GraphDiagram().draw(
         composition,
+        excluded={consumer2},
         labels={
             source: "Source",
             grid_to_val: "G2V",

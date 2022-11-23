@@ -6,41 +6,46 @@ from finam.interfaces import IAdapter, IInput, IOutput
 class Graph:
     """Container for graph data"""
 
-    def __init__(self, comp: Composition):
-        self.components, self.adapters, self.edges, self.direct_edges = _get_graph(comp)
-
+    def __init__(self, comp: Composition, excluded: set):
+        self.components, self.adapters, self.edges, self.direct_edges = _get_graph(
+            comp, excluded
+        )
         self.simple_edges = set()
         for edge in self.direct_edges:
             self.simple_edges.add((edge.source, edge.target))
 
 
-def _get_graph(composition):
-    components, adapters, direct_edges = _get_graph_nodes(composition)
+def _get_graph(composition, excluded):
+    components, adapters, direct_edges = _get_graph_nodes(composition, excluded)
 
-    edges = _get_component_edges(components)
+    edges = _get_component_edges(components, adapters, excluded)
     edges = edges.union(_get_adapter_edges(adapters))
 
     return components, adapters, edges, direct_edges
 
 
-def _get_component_edges(components):
+def _get_component_edges(components, adapters, excluded):
     edges = set()
 
+    output_map = _map_outputs(components)
+
     for comp in components:
+        if comp in excluded:
+            continue
         for i, (n, inp) in enumerate(comp.inputs.items()):
             src = inp.get_source()
-            if isinstance(src, IAdapter):
+            if isinstance(src, IAdapter) and src in adapters:
                 edges.add(Edge(src, None, 0, comp, n, i, 0))
                 continue
-            for comp2 in components:
-                for ii, (nm, out) in enumerate(comp2.outputs.items()):
-                    if out == src:
-                        edges.add(Edge(comp2, nm, ii, comp, n, i, 0))
-                        break
+            comp2, ii = output_map[src]
+            if comp2 not in excluded:
+                edges.add(Edge(comp2, src.name, ii, comp, n, i, 0))
 
         for i, (n, out) in enumerate(comp.outputs.items()):
+            if comp in excluded:
+                continue
             for trg in out.get_targets():
-                if isinstance(trg, IAdapter):
+                if isinstance(trg, IAdapter) and trg in adapters:
                     edges.add(Edge(comp, n, i, trg, None, 0, 0))
 
     return edges
@@ -60,26 +65,47 @@ def _get_adapter_edges(adapters):
     return edges
 
 
-def _get_graph_nodes(composition):
-    components = set(composition.modules)
+def _get_graph_nodes(composition, excluded):
+    components = set()
     adapters = set()
     direct_edges = set()
 
-    for comp in components:
+    output_map = _map_outputs(composition.modules)
+
+    for comp in composition.modules:
+        if comp in excluded:
+            continue
+
+        components.add(comp)
         for i, (n, inp) in enumerate(comp.inputs.items()):
-            out, depth = _trace_input(inp, adapters)
+            temp_adapters = set()
+            out, depth = _trace_input(inp, temp_adapters)
             if out is None:
                 continue
-            for comp2 in components:
-                for ii, (nm, src) in enumerate(comp2.outputs.items()):
-                    if out == src:
-                        direct_edges.add(Edge(comp2, nm, ii, comp, n, i, depth))
-                        break
-
-        for _n, out in comp.outputs.items():
-            _trace_output(out, adapters)
+            comp2, ii = output_map[out]
+            if comp2 not in excluded:
+                adapters.update(temp_adapters)
+                direct_edges.add(Edge(comp2, out.name, ii, comp, n, i, depth))
 
     return components, adapters, direct_edges
+
+
+def _map_inputs(components):
+    input_map = {}
+    for comp in components:
+        for i, (_n, inp) in enumerate(comp.inputs.items()):
+            input_map[inp] = comp, i
+
+    return input_map
+
+
+def _map_outputs(components):
+    output_map = {}
+    for comp in components:
+        for i, (_n, out) in enumerate(comp.outputs.items()):
+            output_map[out] = comp, i
+
+    return output_map
 
 
 def _trace_input(inp: IInput, out_adapters: set, depth=0):
