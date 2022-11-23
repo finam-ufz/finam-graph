@@ -142,12 +142,12 @@ class GraphDiagram:
     def draw(
         self,
         composition,
+        excluded=None,
         simple=False,
         show_adapters=True,
         positions=None,
         labels=None,
         colors=None,
-        excluded=None,
         show=True,
         block=True,
         save_path=None,
@@ -161,6 +161,8 @@ class GraphDiagram:
         ----------
         composition : Composition
             The :class:`finam.Composition` to draw a graph diagram for
+        excluded : list or set, optional
+            List of excluded components. Default: None
         simple : bool, optional
             Whether to draw a simplified version without slots. Default: False
         show_adapters : bool, optional
@@ -171,8 +173,6 @@ class GraphDiagram:
             Dictionary of component/adapter label overrides. Default: None
         colors : dict, optional
             Dictionary of component/adapter color overrides. Default: None
-        excluded : list, optional
-            List of excluded components. Default: None
         show : bool, optional
             Whether to show the diagram. Default: True
         block : bool, optional

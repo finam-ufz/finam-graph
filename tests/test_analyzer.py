@@ -91,10 +91,10 @@ class TestCompAnalyzer(unittest.TestCase):
         composition.initialize()
 
         _ = (
-                source.outputs["Grid"]
-                >> grid_to_val
-                >> lin_interp
-                >> consumer.inputs["Input"]
+            source.outputs["Grid"]
+            >> grid_to_val
+            >> lin_interp
+            >> consumer.inputs["Input"]
         )
 
         _ = source.outputs["Grid"] >> grid_to_val_2 >> consumer2.inputs["Input"]
