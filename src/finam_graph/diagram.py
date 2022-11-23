@@ -490,47 +490,7 @@ class GraphDiagram:
         axes.add_patch(rect)
 
         if not simple:
-            if len(comp.inputs) > 0:
-                for i, (n, inp) in enumerate(comp.inputs.items()):
-                    in_name = labels.get(inp, n)
-                    xlli, ylli = self._input_pos(comp, i)
-                    inp = patches.Rectangle(
-                        (xll + xlli, yll + ylli),
-                        *self.sizes.comp_slot_size,
-                        linewidth=1,
-                        edgecolor="k",
-                        facecolor="lightgrey",
-                    )
-                    axes.add_patch(inp)
-                    axes.text(
-                        xll + xlli + 2,
-                        yll + ylli + self.sizes.comp_slot_size[1] / 2,
-                        _shorten_str(in_name, self.max_slot_label_length),
-                        ha="left",
-                        va="center",
-                        size=7,
-                    )
-
-            if len(comp.outputs) > 0:
-                for i, (n, out) in enumerate(comp.outputs.items()):
-                    out_name = labels.get(out, n)
-                    xllo, yllo = self._output_pos(comp, i)
-                    inp = patches.Rectangle(
-                        (xll + xllo, yll + yllo),
-                        *self.sizes.comp_slot_size,
-                        linewidth=1,
-                        edgecolor="k",
-                        facecolor="white",
-                    )
-                    axes.add_patch(inp)
-                    axes.text(
-                        xll + xllo + 2,
-                        yll + yllo + self.sizes.comp_slot_size[1] / 2,
-                        _shorten_str(out_name, self.max_slot_label_length),
-                        ha="left",
-                        va="center",
-                        size=7,
-                    )
+            self._draw_slots(comp, labels, xll, yll, axes)
 
         axes.text(
             xll + self.sizes.component_size[0] / 2,
@@ -542,6 +502,49 @@ class GraphDiagram:
         )
 
         return rect
+
+    def _draw_slots(self, comp, labels, xll, yll, axes):
+        if len(comp.inputs) > 0:
+            for i, (n, inp) in enumerate(comp.inputs.items()):
+                in_name = labels.get(inp, n)
+                xlli, ylli = self._input_pos(comp, i)
+                inp_rect = patches.Rectangle(
+                    (xll + xlli, yll + ylli),
+                    *self.sizes.comp_slot_size,
+                    linewidth=1,
+                    edgecolor="k",
+                    facecolor="lightgrey",
+                )
+                axes.add_patch(inp_rect)
+                axes.text(
+                    xll + xlli + 2,
+                    yll + ylli + self.sizes.comp_slot_size[1] / 2,
+                    _shorten_str(in_name, self.max_slot_label_length),
+                    ha="left",
+                    va="center",
+                    size=7,
+                )
+
+        if len(comp.outputs) > 0:
+            for i, (n, out) in enumerate(comp.outputs.items()):
+                out_name = labels.get(out, n)
+                xllo, yllo = self._output_pos(comp, i)
+                out_rect = patches.Rectangle(
+                    (xll + xllo, yll + yllo),
+                    *self.sizes.comp_slot_size,
+                    linewidth=1,
+                    edgecolor="k",
+                    facecolor="white",
+                )
+                axes.add_patch(out_rect)
+                axes.text(
+                    xll + xllo + 2,
+                    yll + yllo + self.sizes.comp_slot_size[1] / 2,
+                    _shorten_str(out_name, self.max_slot_label_length),
+                    ha="left",
+                    va="center",
+                    size=7,
+                )
 
     def _draw_adapter(self, comp, position, label, color, axes: Axes):
         name = label or comp.name
