@@ -8,7 +8,6 @@ class Graph:
 
     def __init__(self, comp: Composition, excluded: set):
         self.components, self.adapters, self.edges, self.direct_edges = _get_graph(comp, excluded)
-
         self.simple_edges = set()
         for edge in self.direct_edges:
             self.simple_edges.add((edge.source, edge.target))
@@ -17,16 +16,18 @@ class Graph:
 def _get_graph(composition, excluded):
     components, adapters, direct_edges = _get_graph_nodes(composition, excluded)
 
-    edges = _get_component_edges(components)
+    edges = _get_component_edges(components, excluded)
     edges = edges.union(_get_adapter_edges(adapters))
 
     return components, adapters, edges, direct_edges
 
 
-def _get_component_edges(components):
+def _get_component_edges(components, excluded):
     edges = set()
 
     for comp in components:
+        if comp in excluded:
+            continue
         for i, (n, inp) in enumerate(comp.inputs.items()):
             src = inp.get_source()
             if isinstance(src, IAdapter):
@@ -35,10 +36,13 @@ def _get_component_edges(components):
             for comp2 in components:
                 for ii, (nm, out) in enumerate(comp2.outputs.items()):
                     if out == src:
-                        edges.add(Edge(comp2, nm, ii, comp, n, i, 0))
+                        if comp2 not in excluded:
+                            edges.add(Edge(comp2, nm, ii, comp, n, i, 0))
                         break
 
         for i, (n, out) in enumerate(comp.outputs.items()):
+            if comp in excluded:
+                continue
             for trg in out.get_targets():
                 if isinstance(trg, IAdapter):
                     edges.add(Edge(comp, n, i, trg, None, 0, 0))
@@ -65,25 +69,39 @@ def _get_graph_nodes(composition, excluded):
     adapters = set()
     direct_edges = set()
 
+    input_map = {}
+    output_map = {}
+    for comp in composition.modules:
+        for i, (n, inp) in enumerate(comp.inputs.items()):
+            input_map[inp] = comp, i
+        for i, (n, out) in enumerate(comp.outputs.items()):
+            output_map[out] = comp, i
+
     for comp in composition.modules:
         if comp in excluded:
             continue
 
         components.add(comp)
         for i, (n, inp) in enumerate(comp.inputs.items()):
-            out, depth = _trace_input(inp, adapters)
+            temp_adapters = set()
+            out, depth = _trace_input(inp, temp_adapters)
             if out is None:
                 continue
-            for comp2 in composition.modules:
-                if comp2 in excluded:
-                    continue
-                for ii, (nm, src) in enumerate(comp2.outputs.items()):
-                    if out == src:
-                        direct_edges.add(Edge(comp2, nm, ii, comp, n, i, depth))
-                        break
+            comp2, ii = output_map[out]
+            if comp2 not in excluded:
+                adapters.update(temp_adapters)
+                direct_edges.add(Edge(comp2, out.name, ii, comp, n, i, depth))
 
+        """
         for _n, out in comp.outputs.items():
-            _trace_output(out, adapters)
+            temp_adapters = set()
+            inp, depth = _trace_output(out, temp_adapters)
+            if inp is None:
+                continue
+            comp2, _ii = input_map[inp]
+            if comp2 not in excluded:
+                adapters.update(temp_adapters)
+        """
 
     return components, adapters, direct_edges
 

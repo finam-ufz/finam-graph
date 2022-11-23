@@ -77,11 +77,17 @@ class TestCompAnalyzer(unittest.TestCase):
             start=datetime(2000, 1, 1),
             step=timedelta(days=1),
         )
+        consumer3 = fm.modules.DebugConsumer(
+            inputs={"Input": fm.Info(time=None, grid=fm.NoGrid())},
+            start=datetime(2000, 1, 1),
+            step=timedelta(days=1),
+        )
 
         grid_to_val = fm.adapters.GridToValue(np.mean)
+        grid_to_val_2 = fm.adapters.GridToValue(np.mean)
         lin_interp = fm.adapters.LinearTime()
 
-        composition = fm.Composition([source, consumer, consumer2])
+        composition = fm.Composition([source, consumer, consumer2, consumer3])
         composition.initialize()
 
         _ = (
@@ -91,9 +97,10 @@ class TestCompAnalyzer(unittest.TestCase):
                 >> consumer.inputs["Input"]
         )
 
-        _ = source.outputs["Grid"] >> consumer2.inputs["Input"]
+        _ = source.outputs["Grid"] >> grid_to_val_2 >> consumer2.inputs["Input"]
+        _ = source.outputs["Grid"] >> consumer3.inputs["Input"]
 
-        graph = Graph(composition, set(consumer))
+        graph = Graph(composition, {consumer2})
         self.assertEqual(len(graph.components), 3)
         self.assertEqual(len(graph.adapters), 2)
         self.assertEqual(len(graph.edges), 4)
