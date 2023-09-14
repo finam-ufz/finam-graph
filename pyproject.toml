@@ -11,7 +11,7 @@ name = "finam_graph"
 description = "FINAM coupling graph visualization."
 authors = [{name = "FINAM Developers", email = "finam@ufz.de"}]
 readme = "README.md"
-license = {text = "LGPLv3"}
+license = "LGPL-3.0"
 dynamic = ["version"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -36,7 +36,7 @@ classifiers = [
 dependencies = [
     "matplotlib>=3",
     "numpy>=1.14.5",
-    "finam @ git+https://git.ufz.de/FINAM/finam.git",
+    "finam>=0.5.0",
 ]
 
 [project.urls]
@@ -48,10 +48,10 @@ Changelog = "https://git.ufz.de/FINAM/finam-graph/-/blob/main/finam-graph/CHANGE
 
 [project.optional-dependencies]
 doc = [
-    "sphinx>=5",
-    "pydata-sphinx-theme==0.11",
+    "sphinx>=6",
+    "pydata-sphinx-theme==0.13",
     "numpydoc>=1.1",
-    "sphinx-design>=0.3",
+    "sphinx-design>=0.4",
     "docutils>=0.18", # mdinclude with myst
 ]
 test = ["pytest-cov>=3"]

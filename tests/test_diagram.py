@@ -17,7 +17,6 @@ def generate_grid(grid):
 
 class TestDiagram(unittest.TestCase):
     def test_diagram(self):
-
         grid = fm.UniformGrid((10, 5))
 
         source = fm.modules.CallbackGenerator(

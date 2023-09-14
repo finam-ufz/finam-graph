@@ -684,7 +684,6 @@ def _optimize_positions(
 def _do_optimize_positions(
     graph, nodes, simple, show_adapters, pos, grid, size, max_iterations, rng
 ):
-
     print("Optimizing graph layout...")
 
     score = _rate_positions(
