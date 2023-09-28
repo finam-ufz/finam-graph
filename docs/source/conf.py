@@ -16,6 +16,7 @@ author = "FINAM Developers"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    "myst_parser",
     "sphinx_design",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
@@ -74,8 +75,8 @@ html_logo = "_static/logo_large.svg"
 html_favicon = "_static/logo.svg"
 
 html_theme_options = {
-    "page_sidebar_items": ["page-toc"],
-    "footer_items": ["copyright"],
+    "secondary_sidebar_items": ["page-toc"],
+    "footer_start": ["copyright"],
     "show_nav_level": 2,
     "show_toc_level": 2,
     "icon_links": [

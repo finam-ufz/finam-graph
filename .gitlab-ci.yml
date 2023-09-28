@@ -3,7 +3,9 @@ image: python
 stages:
   - test
   - build
+  - docs
   - deploy
+  - release
 
 check:
   stage: test
@@ -38,8 +40,20 @@ doctest:
     - sphinx-build -b dummy docs/source docs/build
     - sphinx-build -b doctest docs/source docs/build
 
-documentation:
+build:
   stage: build
+  variables:
+    GIT_STRATEGY: clone
+    GIT_DEPTH: 0  # to have all tags
+  script:
+    - pip install build
+    - python -m build
+  artifacts:
+    paths:
+      - dist
+
+documentation:
+  stage: docs
   script:
     - pip3 install --editable .[doc]
     - sphinx-build docs/source docs/build
@@ -56,3 +70,30 @@ pages:
       - public
   only:
     - main
+
+pypi_test_release:
+  stage: release
+  dependencies:
+    - build
+  script:
+    - pip install twine
+    - python -m twine upload --skip-existing -r testpypi -u __token__ -p ${TEST_PYPI_TOKEN} dist/*
+  artifacts:
+    paths:
+      - dist
+  only:
+    - main
+    - tags
+
+pypi_release:
+  stage: release
+  dependencies:
+    - build
+  script:
+    - pip install twine
+    - python -m twine upload -u __token__ -p ${PYPI_TOKEN} dist/*
+  artifacts:
+    paths:
+      - dist
+  only:
+    - tags

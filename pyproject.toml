@@ -1,9 +1,9 @@
 [build-system]
 requires = [
-    "setuptools>=64",
-    "setuptools_scm[toml]>=6.4",
+    "hatchling>=1.8.0",
+    "hatch-vcs",
 ]
-build-backend = "setuptools.build_meta"
+build-backend = "hatchling.build"
 
 [project]
 requires-python = ">=3.8"
@@ -11,7 +11,7 @@ name = "finam_graph"
 description = "FINAM coupling graph visualization."
 authors = [{name = "FINAM Developers", email = "finam@ufz.de"}]
 readme = "README.md"
-license = {text = "LGPLv3"}
+license = "LGPL-3.0"
 dynamic = ["version"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -29,6 +29,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering",
     "Topic :: Software Development",
     "Topic :: Utilities",
@@ -36,7 +37,7 @@ classifiers = [
 dependencies = [
     "matplotlib>=3",
     "numpy>=1.14.5",
-    "finam @ git+https://git.ufz.de/FINAM/finam.git",
+    "finam>=0.5.0",
 ]
 
 [project.urls]
@@ -48,22 +49,37 @@ Changelog = "https://git.ufz.de/FINAM/finam-graph/-/blob/main/finam-graph/CHANGE
 
 [project.optional-dependencies]
 doc = [
-    "sphinx>=5",
-    "pydata-sphinx-theme==0.11",
+    "sphinx>=6",
+    "pydata-sphinx-theme==0.13",
     "numpydoc>=1.1",
-    "sphinx-design>=0.3",
+    "sphinx-design>=0.4",
+    "myst-parser>=1.0",
     "docutils>=0.18", # mdinclude with myst
 ]
 test = ["pytest-cov>=3"]
 
-[tool.setuptools]
-license-files = ["LICENSE"]
+[tool.hatch.metadata]
+allow-direct-references = true
 
-[tool.setuptools_scm]
-write_to = "src/finam_graph/_version.py"
-write_to_template = "__version__ = '{version}'"
-local_scheme = "no-local-version"
+[tool.hatch.version]
+source = "vcs"
 fallback_version = "0.0.0.dev0"
+
+[tool.hatch.version.raw-options]
+local_scheme = "no-local-version"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/finam_graph/_version.py"
+template = "__version__ = '{version}'"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src",
+  "/tests",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/finam_graph"]
 
 [tool.black]
 exclude = "_version.py"
