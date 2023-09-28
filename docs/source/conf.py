@@ -16,6 +16,7 @@ author = "FINAM Developers"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    "myst_parser",
     "sphinx_design",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
