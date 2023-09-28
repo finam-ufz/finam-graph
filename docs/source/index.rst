@@ -4,7 +4,7 @@
 FINAM Graph
 ===========
 
-A tool for visualizing `FINAM <https://finam.pages.ufz.de/>`_ model linkage setups.
+A tool for visualizing `FINAM <https://finam.pages.ufz.de/>`_ model coupling setups.
 
 .. image:: ./images/graph.svg
     :width: 100%
@@ -39,3 +39,19 @@ Information about the API of FINAM-graph.
     :maxdepth: 1
 
     api/index
+
+About
+-----
+
+Further information about licensing, the developers team and the changelog of FINAM-graph.
+
+.. toctree::
+  :maxdepth: 2
+
+  about/index
+
+
+License
+^^^^^^^
+
+LGPLv3, Copyright © 2021-2023, the FINAM developers from Helmholtz-Zentrum für Umweltforschung GmbH - UFZ. All rights reserved.
