@@ -16,7 +16,7 @@ Installation:
 
 .. code-block:: Shell
 
-    $ pip install git+https://git.ufz.de/FINAM/finam-graph.git
+    $ pip install finam-graph
 
 Usage
 -----
