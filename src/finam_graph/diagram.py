@@ -1,4 +1,5 @@
 """Main module for graph diagram drawer"""
+
 import math
 
 import matplotlib.pyplot as plt
@@ -478,13 +479,15 @@ class GraphDiagram:
             boxstyle=f"round,rounding_size={self.corner_radius}",
             linewidth=1,
             edgecolor="k",
-            facecolor=self.colors.selected_comp_color
-            if self.selected_cell == comp
-            else color
-            or (
-                self.colors.time_comp_color
-                if isinstance(comp, ITimeComponent)
-                else self.colors.comp_color
+            facecolor=(
+                self.colors.selected_comp_color
+                if self.selected_cell == comp
+                else color
+                or (
+                    self.colors.time_comp_color
+                    if isinstance(comp, ITimeComponent)
+                    else self.colors.comp_color
+                )
             ),
         )
         axes.add_patch(rect)
@@ -556,9 +559,11 @@ class GraphDiagram:
             boxstyle=f"round, pad=0, rounding_size={self.corner_radius}",
             linewidth=1,
             edgecolor="k",
-            facecolor=self.colors.selected_adapter_color
-            if self.selected_cell == comp
-            else color or self.colors.adapter_color,
+            facecolor=(
+                self.colors.selected_adapter_color
+                if self.selected_cell == comp
+                else color or self.colors.adapter_color
+            ),
         )
 
         xlli, ylli = self._input_pos(comp, 0)
