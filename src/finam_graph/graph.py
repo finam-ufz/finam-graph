@@ -70,9 +70,9 @@ def _get_graph_nodes(composition, excluded):
     adapters = set()
     direct_edges = set()
 
-    output_map = _map_outputs(composition.modules)
+    output_map = _map_outputs(composition._modules)
 
-    for comp in composition.modules:
+    for comp in composition._modules:
         if comp in excluded:
             continue
 
