@@ -34,7 +34,7 @@ def _get_component_edges(components, adapters, excluded):
         if comp in excluded:
             continue
         for i, (n, inp) in enumerate(comp.inputs.items()):
-            src = inp.get_source()
+            src = inp.source
             if isinstance(src, IAdapter) and src in adapters:
                 edges.add(Edge(src, None, 0, comp, n, i, 0))
                 continue
@@ -45,7 +45,7 @@ def _get_component_edges(components, adapters, excluded):
         for i, (n, out) in enumerate(comp.outputs.items()):
             if comp in excluded:
                 continue
-            for trg in out.get_targets():
+            for trg in out.targets:
                 if isinstance(trg, IAdapter) and trg in adapters:
                     edges.add(Edge(comp, n, i, trg, None, 0, 0))
 
@@ -56,10 +56,10 @@ def _get_adapter_edges(adapters):
     edges = set()
 
     for ad in adapters:
-        src = ad.get_source()
+        src = ad.source
         if isinstance(src, IAdapter):
             edges.add(Edge(src, None, 0, ad, None, 0, 0))
-        for trg in ad.get_targets():
+        for trg in ad.targets:
             if isinstance(trg, IAdapter):
                 edges.add(Edge(ad, None, 0, trg, None, 0, 0))
 
@@ -110,7 +110,7 @@ def _map_outputs(components):
 
 
 def _trace_input(inp: IInput, out_adapters: set, depth=0):
-    src = inp.get_source()
+    src = inp.source
     if src is None:
         return None, depth
 
@@ -122,7 +122,7 @@ def _trace_input(inp: IInput, out_adapters: set, depth=0):
 
 
 def _trace_output(out: IOutput, out_adapters: set):
-    for trg in out.get_targets():
+    for trg in out.targets:
         if isinstance(trg, IAdapter):
             out_adapters.add(trg)
             _trace_output(trg, out_adapters)
