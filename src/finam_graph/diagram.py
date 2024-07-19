@@ -151,6 +151,7 @@ class GraphDiagram:
         show=True,
         block=True,
         save_path=None,
+        save_kwargs=None,
         max_iterations=25000,
         seed=None,
     ):
@@ -222,7 +223,8 @@ class GraphDiagram:
         self._repaint(graph, positions, labels, colors, simple, show_adapters, ax)
 
         if save_path is not None:
-            plt.savefig(save_path)
+            save_kwargs = save_kwargs or {}
+            plt.savefig(save_path, **save_kwargs)
 
         if show:
             self._show(
