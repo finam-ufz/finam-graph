@@ -154,6 +154,7 @@ class GraphDiagram:
         save_kwargs=None,
         max_iterations=25000,
         seed=None,
+        figsize=(12, 6),
     ):
         """
         Draw a graph diagram.
@@ -208,7 +209,7 @@ class GraphDiagram:
                 graph, rng, simple, show_adapters, max_iterations
             )
 
-        figure, ax = plt.subplots(figsize=(12, 6))
+        figure, ax = plt.subplots(figsize=figsize)
 
         if figure.canvas.manager is not None:
             figure.canvas.manager.set_window_title(
