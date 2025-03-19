@@ -19,7 +19,7 @@ class TestDiagram(unittest.TestCase):
     def test_diagram(self):
         grid = fm.UniformGrid((10, 5))
 
-        source = fm.modules.CallbackGenerator(
+        source = fm.components.CallbackGenerator(
             callbacks={
                 "Grid": (lambda t: generate_grid(grid), fm.Info(time=None, grid=grid)),
                 "Scalar": (
@@ -30,17 +30,17 @@ class TestDiagram(unittest.TestCase):
             start=datetime(2000, 1, 1),
             step=timedelta(days=7),
         )
-        consumer = fm.modules.DebugConsumer(
+        consumer = fm.components.DebugConsumer(
             inputs={"Input": fm.Info(time=None, grid=fm.NoGrid())},
             start=datetime(2000, 1, 1),
             step=timedelta(days=1),
         )
-        consumer2 = fm.modules.DebugConsumer(
+        consumer2 = fm.components.DebugConsumer(
             inputs={"Input": fm.Info(time=None, grid=fm.NoGrid())},
             start=datetime(2000, 1, 1),
             step=timedelta(days=1),
         )
-        consumer3 = fm.modules.DebugConsumer(
+        consumer3 = fm.components.DebugConsumer(
             inputs={"Input": fm.Info(time=None, grid=fm.NoGrid())},
             start=datetime(2000, 1, 1),
             step=timedelta(days=1),
@@ -51,7 +51,6 @@ class TestDiagram(unittest.TestCase):
         lin_interp = fm.adapters.LinearTime()
 
         composition = fm.Composition([source, consumer, consumer2, consumer3])
-        composition.initialize()
 
         _ = (
             source.outputs["Grid"]
@@ -80,3 +79,7 @@ class TestDiagram(unittest.TestCase):
                 seed=5,
                 save_path=file_path,
             )
+
+
+if __name__ == "__main__":
+    unittest.main()

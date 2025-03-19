@@ -95,7 +95,6 @@ class GraphDiagram:
     .. code-block:: Python
 
         composition = Composition([comp_a, comp_b])
-        composition.initialize()
 
         comp_a.outputs["Out"] >> comp_b.inputs["In"]
 

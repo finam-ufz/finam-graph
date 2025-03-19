@@ -15,7 +15,7 @@ def generate_grid(grid_spec):
 if __name__ == "__main__":
     grid = fm.UniformGrid((10, 5))
 
-    source = fm.modules.CallbackGenerator(
+    source = fm.components.CallbackGenerator(
         callbacks={
             "Grid": (lambda t: generate_grid(grid), fm.Info(time=None, grid=grid)),
             "Scalar": (
@@ -26,17 +26,17 @@ if __name__ == "__main__":
         start=datetime(2000, 1, 1),
         step=timedelta(days=7),
     )
-    consumer = fm.modules.DebugConsumer(
+    consumer = fm.components.DebugConsumer(
         inputs={"Input": fm.Info(time=None, grid=fm.NoGrid())},
         start=datetime(2000, 1, 1),
         step=timedelta(days=1),
     )
-    consumer2 = fm.modules.DebugConsumer(
+    consumer2 = fm.components.DebugConsumer(
         inputs={"Input": fm.Info(time=None, grid=fm.NoGrid())},
         start=datetime(2000, 1, 1),
         step=timedelta(days=1),
     )
-    consumer3 = fm.modules.DebugConsumer(
+    consumer3 = fm.components.DebugConsumer(
         inputs={"Input": fm.Info(time=None, grid=fm.NoGrid())},
         start=datetime(2000, 1, 1),
         step=timedelta(days=1),
@@ -47,7 +47,6 @@ if __name__ == "__main__":
     lin_interp = fm.adapters.LinearTime()
 
     composition = fm.Composition([source, consumer, consumer2, consumer3])
-    composition.initialize()
 
     _ = source.outputs["Grid"] >> grid_to_val >> lin_interp >> consumer.inputs["Input"]
 
