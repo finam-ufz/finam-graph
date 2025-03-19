@@ -1,5 +1,6 @@
 """Helpers for graph analysis"""
 
+# pylint: disable=W0212
 from finam import Composition
 from finam.interfaces import IAdapter, IInput, IOutput
 
