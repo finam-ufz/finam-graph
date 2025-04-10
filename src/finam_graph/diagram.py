@@ -1,4 +1,5 @@
 """Main module for graph diagram drawer"""
+
 import math
 
 import matplotlib.pyplot as plt
@@ -94,7 +95,6 @@ class GraphDiagram:
     .. code-block:: Python
 
         composition = Composition([comp_a, comp_b])
-        composition.initialize()
 
         comp_a.outputs["Out"] >> comp_b.inputs["In"]
 
@@ -150,8 +150,10 @@ class GraphDiagram:
         show=True,
         block=True,
         save_path=None,
+        save_kwargs=None,
         max_iterations=25000,
         seed=None,
+        figsize=(12, 6),
     ):
         """
         Draw a graph diagram.
@@ -206,7 +208,7 @@ class GraphDiagram:
                 graph, rng, simple, show_adapters, max_iterations
             )
 
-        figure, ax = plt.subplots(figsize=(12, 6))
+        figure, ax = plt.subplots(figsize=figsize)
 
         if figure.canvas.manager is not None:
             figure.canvas.manager.set_window_title(
@@ -221,7 +223,8 @@ class GraphDiagram:
         self._repaint(graph, positions, labels, colors, simple, show_adapters, ax)
 
         if save_path is not None:
-            plt.savefig(save_path)
+            save_kwargs = save_kwargs or {}
+            plt.savefig(save_path, **save_kwargs)
 
         if show:
             self._show(
@@ -478,13 +481,15 @@ class GraphDiagram:
             boxstyle=f"round,rounding_size={self.corner_radius}",
             linewidth=1,
             edgecolor="k",
-            facecolor=self.colors.selected_comp_color
-            if self.selected_cell == comp
-            else color
-            or (
-                self.colors.time_comp_color
-                if isinstance(comp, ITimeComponent)
-                else self.colors.comp_color
+            facecolor=(
+                self.colors.selected_comp_color
+                if self.selected_cell == comp
+                else color
+                or (
+                    self.colors.time_comp_color
+                    if isinstance(comp, ITimeComponent)
+                    else self.colors.comp_color
+                )
             ),
         )
         axes.add_patch(rect)
@@ -556,9 +561,11 @@ class GraphDiagram:
             boxstyle=f"round, pad=0, rounding_size={self.corner_radius}",
             linewidth=1,
             edgecolor="k",
-            facecolor=self.colors.selected_adapter_color
-            if self.selected_cell == comp
-            else color or self.colors.adapter_color,
+            facecolor=(
+                self.colors.selected_adapter_color
+                if self.selected_cell == comp
+                else color or self.colors.adapter_color
+            ),
         )
 
         xlli, ylli = self._input_pos(comp, 0)

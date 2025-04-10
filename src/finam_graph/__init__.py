@@ -26,6 +26,7 @@ Graph data
 
     graph.Graph
 """
+
 from . import graph
 from .diagram import GraphColors, GraphDiagram, GraphSizes
 
