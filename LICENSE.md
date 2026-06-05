@@ -4,7 +4,7 @@ FINAM-graph provides coupling setup visualization for the FINAM model coupling f
 
 ## Copyright Notice
 
-Copyright © 2023, the FINAM developers from Helmholtz-Zentrum für Umweltforschung GmbH - UFZ. All rights reserved.
+Copyright © 2026, the FINAM developers from Helmholtz-Zentrum für Umweltforschung GmbH - UFZ. All rights reserved.
 
 ***The code is a property of:***
 
